@@ -19,6 +19,7 @@
 					/datum/action/cooldown/spell/undirected/list_target/convert_role/servant)
 
 	give_bank_account = 250
+	daily_salary = 10
 	noble_income = 18
 
 	advclass_cat_rolls = list(CAT_COUNCILOR = 20)

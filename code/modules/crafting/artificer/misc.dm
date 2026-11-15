@@ -558,3 +558,15 @@
 	created_item = /obj/item/jingle_bells
 	hammers_per_item = 5
 	craftdiff = 2
+
+/datum/artificer_recipe/misc/drainingcollar
+	name = "Mana Draining Slave Collar +1 blortz"
+	required_item = /obj/item/clothing/neck/slave_collar
+	additional_items = list(/obj/item/gem/blue = 1)
+	created_item = /obj/item/clothing/neck/slave_collar/draining
+
+/datum/artificer_recipe/misc/drainingcollarelegant
+	name = "Elegant Mana Draining Slave Collar +1 blortz"
+	required_item = /obj/item/clothing/neck/slave_collar/female
+	additional_items = list(/obj/item/gem/blue = 1)
+	created_item = /obj/item/clothing/neck/slave_collar/draining/female

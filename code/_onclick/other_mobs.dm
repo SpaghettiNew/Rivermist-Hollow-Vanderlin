@@ -431,7 +431,12 @@
 		var/target_perception = GET_MOB_ATTRIBUTE_VALUE(victim, STAT_PERCEPTION)
 		var/target_skill = GET_MOB_SKILL_VALUE_OLD(victim, /datum/attribute/skill/misc/stealing)
 		var/exp_to_gain = GET_MOB_ATTRIBUTE_VALUE(thief, STAT_INTELLIGENCE) * 1.5
-		var/list/stealablezones = list(BODY_ZONE_CHEST, BODY_ZONE_L_ARM, BODY_ZONE_R_ARM, BODY_ZONE_PRECISE_NECK, BODY_ZONE_PRECISE_GROIN, BODY_ZONE_L_LEG, BODY_ZONE_R_LEG, BODY_ZONE_PRECISE_R_HAND, BODY_ZONE_PRECISE_L_HAND)
+		//RMH EDITED START - legs had no steal case; sneaking at the groin goes for underwear
+		var/list/stealablezones = list(BODY_ZONE_CHEST, BODY_ZONE_L_ARM, BODY_ZONE_R_ARM, BODY_ZONE_PRECISE_NECK, BODY_ZONE_PRECISE_GROIN, BODY_ZONE_PRECISE_R_HAND, BODY_ZONE_PRECISE_L_HAND)
+		var/underwear_attempt = thief.m_intent == MOVE_INTENT_SNEAK && thief.zone_selected == BODY_ZONE_PRECISE_GROIN
+		if(underwear_attempt)
+			target_perception += UNDERWEAR_STEAL_PERCEPTION_BONUS
+		//RMH EDITED END
 		var/list/stealpos = list()
 		if(client?.prefs.read_preference(/datum/preference/toggle/showrolls))
 			to_chat(thief, span_info("Your stealing skill roll of [thiefskill]d6 is [stealroll]..."))
@@ -442,35 +447,47 @@
 			if(!(zone_selected in stealablezones))
 				to_chat(thief, span_warning("What am I going to steal from there?"))
 				return
+			//RMH EDITED START
+			var/obj/item/underwear_blocker = underwear_attempt ? victim.get_underwear_blocker() : null
+			if(underwear_blocker)
+				to_chat(thief, span_warning("[victim]'s [underwear_blocker.name] is in the way!"))
+				return
 			//2.5 seconds for those without skill
 			//better skill shortens time, up to one second with legendary
-			if(do_after(thief, (2.5 - (thief_skill_base * 0.25)) SECONDS, victim, progress = FALSE))
+			var/steal_time = (2.5 - (thief_skill_base * 0.25)) SECONDS
+			if(underwear_attempt)
+				steal_time *= UNDERWEAR_STEAL_TIME_MULT
+			if(do_after(thief, steal_time, victim, progress = FALSE)) //RMH EDITED END
 				switch(thief.zone_selected)
 					if(BODY_ZONE_CHEST)
 						if (victim.get_item_by_slot(ITEM_SLOT_BACK_L))
 							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BACK_L))
 						if (victim.get_item_by_slot(ITEM_SLOT_BACK_R))
 							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BACK_R))
+					//RMH EDITED START - each arm reaches its back and hip slot; duplicate arm cases never ran
 					if(BODY_ZONE_L_ARM)
 						if (victim.get_item_by_slot(ITEM_SLOT_BACK_L))
 							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BACK_L))
+						if (victim.get_item_by_slot(ITEM_SLOT_BELT_L))
+							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BELT_L))
 					if(BODY_ZONE_R_ARM)
 						if (victim.get_item_by_slot(ITEM_SLOT_BACK_R))
 							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BACK_R))
+						if (victim.get_item_by_slot(ITEM_SLOT_BELT_R))
+							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BELT_R))
 					if(BODY_ZONE_PRECISE_NECK)
 						if (victim.get_item_by_slot(ITEM_SLOT_NECK))
 							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_NECK))
 					if(BODY_ZONE_PRECISE_GROIN)
-						if (victim.get_item_by_slot(ITEM_SLOT_BELT_R))
-							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BELT_R))
-						if (victim.get_item_by_slot(ITEM_SLOT_BELT_L))
-							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BELT_L))
-					if(BODY_ZONE_L_ARM)
-						if (victim.get_item_by_slot(ITEM_SLOT_BELT_L))
-							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BELT_L))
-					if(BODY_ZONE_R_ARM)
-						if (victim.get_item_by_slot(ITEM_SLOT_BELT_R))
-							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BELT_R))
+						if(underwear_attempt)
+							if(victim.underwear)
+								stealpos.Add(victim.underwear)
+						else
+							if (victim.get_item_by_slot(ITEM_SLOT_BELT_R))
+								stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BELT_R))
+							if (victim.get_item_by_slot(ITEM_SLOT_BELT_L))
+								stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_BELT_L))
+					//RMH EDITED END
 					if(BODY_ZONE_PRECISE_R_HAND, BODY_ZONE_PRECISE_L_HAND)
 						if (victim.get_item_by_slot(ITEM_SLOT_RING))
 							stealpos.Add(victim.get_item_by_slot(ITEM_SLOT_RING))
@@ -479,8 +496,14 @@
 					if(HAS_TRAIT(picked, TRAIT_HARD_TO_STEAL))
 						to_chat(thief, span_danger("[picked] is strapped on tight, I can't steal it!"))
 						return
-
-					victim.dropItemToGround(picked)
+					//RMH EDITED START - locked chastity devices and stuck items stay on
+					if(underwear_attempt && (victim.get_underwear_blocker() || !picked.canStrip(thief, victim)))
+						to_chat(thief, span_danger("I can't get [picked] off!"))
+						return
+					if(!victim.dropItemToGround(picked))
+						to_chat(thief, span_danger("I can't get [picked] off!"))
+						return
+					//RMH EDITED END
 					put_in_active_hand(picked)
 					to_chat(thief, span_green("I stole [picked]!"))
 					log_combat(thief, victim, "stole [picked] from ")

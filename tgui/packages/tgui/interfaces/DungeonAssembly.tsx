@@ -131,7 +131,7 @@ function ExpeditionTab(props) {
       )}
       {!dormant && !run_active && (
         <Stack.Item>
-          <NoticeBox warning>
+          <NoticeBox danger>
             The dark does not let go: there is no way back to the surface until
             the floor&apos;s master falls and its place of respite is won.
           </NoticeBox>

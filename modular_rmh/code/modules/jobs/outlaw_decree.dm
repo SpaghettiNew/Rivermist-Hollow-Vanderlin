@@ -1,5 +1,5 @@
 #define FACELESS_ONE_JOB_TITLE "Faceless One"
-#define OUTLAW_DECREE_COOLDOWN (10 MINUTES)
+#define OUTLAW_DECREE_COOLDOWN (5 MINUTES)
 
 /proc/grant_outlaw_decree(mob/living/carbon/human/recipient)
 	if(!istype(recipient))

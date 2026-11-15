@@ -159,6 +159,7 @@ type JobEntry = {
   title_choices: JobChoice[];
   honorary_choices: JobChoice[];
   details?: JobDetails;
+  required_jobs?: string[];
 };
 type JobCategory = { name: string; color: string; jobs: JobEntry[] };
 type JobState = {
@@ -2559,13 +2560,17 @@ export const CharacterCreator = () => {
           {(category?.jobs || []).map((job) => {
             const state = jobStates[job.title];
             const available = state?.status === 'available';
+            const tileName = available
+              ? state.current_title
+              : state?.display_name || job.title;
             return (
               <Tile
                 key={job.title}
-                name={
-                  available
-                    ? state.current_title
-                    : state?.display_name || job.title
+                name={tileName}
+                title={
+                  job.required_jobs?.length
+                    ? `${tileName}\n${L.requiredJobs}: ${job.required_jobs.join(', ')}`
+                    : undefined
                 }
                 icon={CATEGORY_ICONS[category?.name || ''] || 'user'}
                 inspected={job.title === inspectedTitle}
@@ -2626,6 +2631,18 @@ export const CharacterCreator = () => {
                 ? ` · ${L.priority}: ${L.priorityNames[inspectedState.pref_level]}`
                 : ''}
             </div>
+            {inspected.required_jobs?.length ? (
+              <div className="cc-hint">
+                <Tip
+                  className="cc-link"
+                  title={L.requiredJobs}
+                  body={L.requiredJobsHint}
+                >
+                  <Icon name="link" mr={0.5} />
+                  {L.requiredJobs}: {inspected.required_jobs.join(', ')}
+                </Tip>
+              </div>
+            ) : null}
             {inspectedState.status !== 'available' ? (
               <div className="cc-hint" style={{ color: 'var(--cc-bad)' }}>
                 {inspectedState.status === 'banned'

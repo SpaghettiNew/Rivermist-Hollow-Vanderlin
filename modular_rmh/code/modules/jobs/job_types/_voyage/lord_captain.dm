@@ -32,6 +32,8 @@
 	attribute_sheet = /datum/attribute_holder/sheet/job/advclass/burgmeister/lord_captain
 
 	traits = list(
+		TRAIT_KNOW_WATCH,
+		TRAIT_KNOW_WATCH_RANK,
 		TRAIT_CAN_STEER_SHIP,
 		TRAIT_MEDIUMARMOR,
 		TRAIT_DODGEEXPERT,

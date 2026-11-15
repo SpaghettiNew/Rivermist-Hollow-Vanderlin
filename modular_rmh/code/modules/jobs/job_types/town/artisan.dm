@@ -15,6 +15,7 @@
 	advclass_cat_rolls = list(CAT_ARTISAN = 20)
 
 	give_bank_account = 5
+	daily_salary = 10
 	job_subclasses = list(
 		/datum/job/advclass/artisan/blacksmith,
 		/datum/job/advclass/artisan/carpenter,

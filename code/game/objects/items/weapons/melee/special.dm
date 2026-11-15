@@ -134,7 +134,7 @@
 	gripped_intents = null
 	minstr = 5
 	w_class = WEIGHT_CLASS_NORMAL
-	var/charge = 100
+	var/charge = 150
 	var/on = FALSE
 
 /datum/intent/mace/strike/stunner/afterchange()
@@ -203,7 +203,7 @@
 	if(on)
 		charge--
 	else
-		if(charge < 100)
+		if(charge < 150)
 			charge++
 	if(charge <= 0)
 		on = FALSE

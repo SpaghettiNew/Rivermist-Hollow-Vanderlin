@@ -38,22 +38,24 @@ SUBSYSTEM_DEF(nightshift)
 		return
 	check_nightshift()
 
-/datum/controller/subsystem/nightshift/proc/announce(message)
-	priority_announce(message, sound='sound/misc/bell.ogg', sender_override="Automated Lighting System Announcement")
-
 /datum/controller/subsystem/nightshift/proc/check_nightshift()
 	var/curtod = settod()
 	if(current_tod != curtod)
-		SSParticleWeather.selected_forecast.set_ambient_temperature(curtod)
-		current_tod = GLOB.tod
-		update_nightshift()
+		if(SSParticleWeather.selected_forecast)
+			SSParticleWeather.selected_forecast.set_ambient_temperature(curtod)
 
-/datum/controller/subsystem/nightshift/proc/update_nightshift()
+		current_tod = curtod
+		update_nightshift(curtod)
+
+/datum/controller/subsystem/nightshift/proc/announce(message)
+	priority_announce(message, sound='sound/misc/bell.ogg', sender_override="Automated Lighting System Announcement")
+
+/datum/controller/subsystem/nightshift/proc/update_nightshift(tod_to_apply = GLOB.tod)
 	set waitfor = FALSE
 	for(var/obj/A in GLOB.TodUpdate)
-		A.update_tod(GLOB.tod)
+		A.update_tod(tod_to_apply)
 	for(var/mob/living/M in GLOB.mob_list)
-		M.update_tod(GLOB.tod)
+		M.update_tod(tod_to_apply)
 
 /obj/proc/update_tod(todd)
 	return

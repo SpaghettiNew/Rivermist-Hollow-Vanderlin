@@ -21,6 +21,7 @@
 	spells = list(/datum/action/cooldown/spell/undirected/list_target/convert_role/adventurers_guild)
 
 	give_bank_account = 200
+	daily_salary = 25
 	exp_type = list(EXP_TYPE_LIVING, EXP_TYPE_ADVENTURER, EXP_TYPE_RANGER, EXP_TYPE_MERCENARY)
 	exp_types_granted = list(EXP_TYPE_ADVENTURER, EXP_TYPE_RANGER, EXP_TYPE_MERCENARY, EXP_TYPE_LEADERSHIP)
 	exp_requirements = list(

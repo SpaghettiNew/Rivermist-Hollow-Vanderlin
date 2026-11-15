@@ -321,7 +321,7 @@ GLOBAL_LIST_INIT(arcane_brand_glows, list(
 		if(TATTOO_MEDIUM_PAINT)
 			return "Paint ([entry["color"]])"
 		if(TATTOO_MEDIUM_LIPSTICK)
-			var/shade = LAZYACCESS(GLOB.lipstick_shades, lowertext(entry["color"]))
+			var/shade = LAZYACCESS(GLOB.lipstick_shades, LOWER_TEXT(entry["color"]))
 			return shade ? "[capitalize(shade)] lipstick" : "Lipstick"
 		if(TATTOO_MEDIUM_QUILL)
 			return "Quill ink"
@@ -361,7 +361,7 @@ GLOBAL_LIST_INIT(arcane_brand_glows, list(
 		if(TATTOO_MEDIUM_BRAND)
 			return "On the [zone_name], burned into the skin: [mark_text]"
 		if(TATTOO_MEDIUM_ARCANE)
-			return "On the [zone_name], a sigil glows [lowertext(arcane_glow_name(entry["color"]))]: [mark_text]"
+			return "On the [zone_name], a sigil glows [LOWER_TEXT(arcane_glow_name(entry["color"]))]: [mark_text]"
 	if(is_surface_body_mark(medium))
 		return "On the [zone_name], written in [surface_mark_material(medium)]: [mark_text][faded ? " (smudged)" : ""]"
 	var/faded_note = faded ? " (faded)" : ""

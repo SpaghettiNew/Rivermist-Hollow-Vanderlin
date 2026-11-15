@@ -217,6 +217,8 @@ GLOBAL_LIST_INIT(traits_by_type, list(
 		"Inflexible" = TRAIT_UNDODGING,
 		"Freeze Hunger" = TRAIT_FREEZEHUNGER,
 		"Virgin" = TRAIT_VIRGIN,
+		"Townwatch Command" = TRAIT_TOWNWATCH_COMMAND,
+		"Townwatch Command Source" = TOWNWATCH_COMMAND_TRAIT_SOURCE
 	),
 	/obj/item/bodypart = list(
 		"TRAIT_PARALYSIS" = TRAIT_PARALYSIS
@@ -358,6 +360,8 @@ GLOBAL_LIST_INIT(roguetraits, list(
 	TRAIT_WILDMAGIC = span_info("Unruly magic sparks and fizzes through my veins. Each time I cast a spell, my magic might surge and trigger a random magical effect.."),
 	TRAIT_DRUNKMASTER = span_info("While perfectly drunk, I become stronger and cannot stumble. Too much drink breaks my balance."),
 	TRAIT_PONYGIRL_RIDEABLE = span_notice("Willing or not, I've been trained to carry other people's burdens."),
+	TRAIT_TOWNWATCH_COMMAND =  span_notice("I am a member of the townwatch, and can command other members of the townwatch to follow my orders."),
+	TOWNWATCH_COMMAND_TRAIT_SOURCE = span_notice("I am a member of the townwatch, and can command other members of the townwatch to follow my orders.")
 ))
 
 /// value -> trait name, generated on use from trait_by_type global

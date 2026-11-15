@@ -22,9 +22,11 @@
 		/datum/job/advclass/watch_guard/halberdier,
 		/datum/job/advclass/watch_guard/sentinel,
 		/datum/job/advclass/watch_guard/marine,
+		/datum/job/advclass/watch_guard/disciplinary,
 	)
 
-	give_bank_account = 30
+	give_bank_account = 75
+	daily_salary = 20
 
 	exp_type = list(EXP_TYPE_LIVING)
 	exp_types_granted = list(EXP_TYPE_GARRISON, EXP_TYPE_COMBAT)
@@ -54,7 +56,7 @@
 /datum/attribute_holder/sheet/job/advclass/watch_guard/bulwark
 	raw_attribute_list = list(
 		STAT_STRENGTH = 2,
-		STAT_ENDURANCE = 3,
+		STAT_ENDURANCE = 4,
 		STAT_CONSTITUTION = 3,
 		/datum/attribute/skill/combat/axesmaces = 40,
 		/datum/attribute/skill/combat/shields = 40,
@@ -199,7 +201,7 @@
 /datum/attribute_holder/sheet/job/advclass/watch_guard/sentinel
 	raw_attribute_list = list(
 		STAT_PERCEPTION = 2,
-		STAT_ENDURANCE = 1,
+		STAT_ENDURANCE = 3,
 		STAT_SPEED = 2,
 		/datum/attribute/skill/combat/bows = 30,
 		/datum/attribute/skill/combat/crossbows = 30,
@@ -269,6 +271,86 @@
 
 	backpack_contents = list(
 		/obj/item/clothing/neck/slave_collar,
+		/obj/item/reagent_containers/glass/bottle/stronghealthpot,
+		/obj/item/flashlight/flare/torch/lantern,
+	)
+
+//////////////////////////////////
+// DISCIPLINARY //
+//////////////////////////////////
+
+/datum/job/advclass/watch_guard/disciplinary
+	title = "Town watch Disciplinary Guard"
+	tutorial = "You are responsible the nominee for the warden's place, but something got wrong very quickly. Being stuck in your position, now you are obliged to relive your collegues and being of service. \
+	After a few months, you've ben designated for the Rivermist Hollow. On your way, while packing stuff you've lost your boots! How unfortunate!"
+
+	outfit =/datum/outfit/watch_guard/disciplinary
+	allowed_sexes = list(FEMALE)
+	category_tags = list(CAT_WATCHMAN)
+
+	attribute_sheet = /datum/attribute_holder/sheet/job/advclass/watch_guard/disciplinary
+
+	traits = list(
+		TRAIT_MEDIUMARMOR,
+		TRAIT_KNOWBANDITS
+	)
+
+/datum/attribute_holder/sheet/job/advclass/watch_guard/disciplinary
+	raw_attribute_list = list(
+		STAT_STRENGTH = 2,
+		STAT_ENDURANCE = 3,
+		STAT_CONSTITUTION = 2,
+		STAT_INTELLIGENCE = 1,
+		/datum/attribute/skill/combat/axesmaces = 40,
+		/datum/attribute/skill/combat/shields = 40,
+		/datum/attribute/skill/combat/swords = 30,
+		/datum/attribute/skill/combat/knives = 20,
+		/datum/attribute/skill/combat/wrestling = 30,
+		/datum/attribute/skill/combat/unarmed = 40,
+		/datum/attribute/skill/misc/swimming = 20,
+		/datum/attribute/skill/misc/climbing = 30,
+		/datum/attribute/skill/misc/athletics = 40,
+		/datum/attribute/skill/misc/sneaking = 20,
+		/datum/attribute/skill/misc/reading = 30
+	)
+
+/datum/job/advclass/watch_guard/sentinel/after_spawn(mob/living/carbon/human/spawned, client/player_client)
+	. = ..()
+	var/weapons = list("Longbow", "Crossbow")
+	var/weapon_choice = browser_input_list(spawned, "CHOOSE YOUR WEAPON.", "TAKE UP ARMS", weapons)
+
+	switch(weapon_choice)
+		if("Longbow")
+			spawned.put_in_hands(new /obj/item/gun/ballistic/revolver/grenadelauncher/bow/long(get_turf(spawned)), TRUE)
+			spawned.put_in_hands(new /obj/item/ammo_holder/quiver/arrows(get_turf(spawned)), TRUE)
+		if("Crossbow")
+			spawned.put_in_hands(new /obj/item/gun/ballistic/revolver/grenadelauncher/crossbow(get_turf(spawned)), TRUE)
+			spawned.put_in_hands(new /obj/item/ammo_holder/quiver/bolts(get_turf(spawned)), TRUE)
+
+/datum/outfit/watch_guard/disciplinary
+	name = "Town Watch Disciplinary Guard"
+	head = /obj/item/clothing/head/helmet/townwatch/gatemaster
+	mask = null
+	neck = /obj/item/clothing/neck/coif/cloth
+	cloak = /obj/item/clothing/cloak/half/guard
+	armor = /obj/item/clothing/armor/medium/scale/bikini/bra
+	shirt = /obj/item/clothing/armor/gambeson/colored/town_watch
+	wrists = /obj/item/clothing/wrists/bracers/leather/advanced
+	gloves = /obj/item/clothing/gloves/leather/advanced
+	pants = /obj/item/clothing/pants/trou/leather/splint
+	shoes = null
+	backr = /obj/item/storage/backpack/satchel/black
+	backl = null
+	belt = /obj/item/storage/belt/leather/town_watch
+	beltr = null
+	beltl = /obj/item/weapon/mace/stunmace
+	ring = /obj/item/clothing/ring/slave_control
+	l_hand = null
+	r_hand = null
+
+	backpack_contents = list(
+		/obj/item/clothing/neck/slave_collar,
+		/obj/item/clothing/face/bdsm_gag/ball/black,
 		/obj/item/reagent_containers/glass/bottle/stronghealthpot,
 		/obj/item/flashlight/flare/torch/lantern,
 	)

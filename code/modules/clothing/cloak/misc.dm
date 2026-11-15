@@ -98,6 +98,7 @@
 	icon_state = "guardcloak"
 	allowed_race = ALL_RACES_LIST
 	uses_lord_coloring = LORD_PRIMARY
+	social_cues = list("faction:town_watch" = 5)
 
 /obj/item/clothing/cloak/half/guardsecond
 	name = "guard's half cloak"
@@ -105,6 +106,7 @@
 	icon_state = "guardcloak"
 	allowed_race = ALL_RACES_LIST
 	uses_lord_coloring = LORD_PRIMARY
+	social_cues = list("faction:town_watch" = 5)
 
 /obj/item/clothing/cloak/half/shadowcloak
 	name = "stalker cloak"
@@ -142,6 +144,7 @@
 	color = CLOTHING_BLOOD_RED
 	inhand_mod = FALSE
 	uses_lord_coloring = LORD_PRIMARY
+	social_cues = list("faction:town_watch" = 5)
 
 /obj/item/clothing/cloak/half/colored/random/Initialize()
 	color = pick(CLOTHING_WINESTAIN_RED, CLOTHING_MUSTARD_YELLOW, CLOTHING_SOOT_BLACK, CLOTHING_BARK_BROWN, CLOTHING_FOREST_GREEN, CLOTHING_BERRY_BLUE)
@@ -185,6 +188,7 @@
 	icon = 'icons/roguetown/clothing/cloaks.dmi'
 	mob_overlay_icon = 'icons/roguetown/clothing/onmob/cloaks.dmi'
 	sleeved = 'icons/roguetown/clothing/onmob/cloaks.dmi'
+	social_cues = list(social_cues = list("faction:town_watch" = 5))
 
 // Dumping old black knight stuff here
 /obj/item/clothing/cloak/cape/blkknight

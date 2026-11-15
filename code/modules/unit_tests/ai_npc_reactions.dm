@@ -237,3 +237,103 @@
 	TEST_ASSERT(!LAZYACCESS(controller.current_behaviors, GET_AI_BEHAVIOR(/datum/ai_behavior/eat_dead_body)), "A fight should cancel the meal at the next plan.")
 	TEST_ASSERT(!spider.doing(), "Cancelling the meal should end the chewing at once.")
 	sleep(2) // lets the cancelled chew return before teardown deletes the spider
+
+/// A bleeding, bruised beespider with no foe; its targeting accepts nobody until a test says so.
+/datum/unit_test/ai_npc_reaction/proc/make_hurt_spider(datum/targetting_datum/unit_test_one_target/targeting)
+	var/mob/living/simple_animal/hostile/retaliate/spider/spider = allocate(/mob/living/simple_animal/hostile/retaliate/spider)
+	var/datum/ai_controller/controller = spider.ai_controller
+	controller.idle_behavior = null
+	controller.set_blackboard_key(BB_TARGETTING_DATUM, targeting)
+	spider.simple_add_wound(/datum/wound/puncture, silent = TRUE)
+	// Stays above retreat_health, so the flee element does not take over.
+	spider.adjustBruteLoss(spider.maxHealth * 0.3)
+	return spider
+
+/// The heal came before the melee and ended planning, so a hurt beespider stood still beside its foe.
+/datum/unit_test/ai_npc_reaction/hurt_spider_fights_before_healing
+
+/datum/unit_test/ai_npc_reaction/hurt_spider_fights_before_healing/Run()
+	var/mob/living/carbon/human/foe = allocate(/mob/living/carbon/human)
+	var/datum/targetting_datum/unit_test_one_target/targeting = allocate(/datum/targetting_datum/unit_test_one_target)
+	var/mob/living/simple_animal/hostile/retaliate/spider/spider = make_hurt_spider(targeting)
+	var/datum/ai_controller/controller = spider.ai_controller
+	TEST_ASSERT(spider.get_bleed_rate() > 0 && spider.getBruteLoss() > 0, "Test setup: the beespider should bleed and be bruised.")
+	TEST_ASSERT(!controller.blackboard[BB_BASIC_MOB_FLEEING], "Test setup: the beespider should not be fleeing.")
+	targeting.allowed_target = foe
+	controller.set_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET, foe)
+
+	ai_test_plan(controller)
+	TEST_ASSERT(!LAZYACCESS(controller.current_behaviors, GET_AI_BEHAVIOR(/datum/ai_behavior/simple_rest_and_recuperate)), "A beespider with a live foe beside it must not plan to heal.")
+	TEST_ASSERT(LAZYACCESS(controller.current_behaviors, GET_AI_BEHAVIOR(/datum/ai_behavior/basic_melee_attack/agile)), "A hurt beespider should attack the foe beside it.")
+	controller.CancelActions()
+
+/// A hit from a mob it does not target still means a fight; the heal waits for the calm time.
+/datum/unit_test/ai_npc_reaction/hit_spider_heals_once_calm
+
+/datum/unit_test/ai_npc_reaction/hit_spider_heals_once_calm/Run()
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, run_loc_floor_top_right)
+	var/mob/living/simple_animal/hostile/retaliate/spider/spider = make_hurt_spider(allocate(/datum/targetting_datum/unit_test_one_target))
+	var/datum/ai_controller/controller = spider.ai_controller
+	var/datum/ai_planning_subtree/recovery = GLOB.ai_subtrees[/datum/ai_planning_subtree/simple_self_recovery]
+	var/datum/ai_behavior/heal = GET_AI_BEHAVIOR(/datum/ai_behavior/simple_rest_and_recuperate)
+
+	SEND_SIGNAL(spider, COMSIG_ATOM_WAS_ATTACKED, attacker, 10)
+	TEST_ASSERT_NULL(controller.blackboard[BB_BASIC_MOB_CURRENT_TARGET], "Test setup: the attacker should not become the target.")
+	TEST_ASSERT_NULL(recovery.SelectBehaviors(controller, 0.5), "A beespider hit moments ago must not plan to heal.")
+	TEST_ASSERT(!LAZYACCESS(controller.current_behaviors, heal), "A beespider hit moments ago must not queue a heal.")
+
+	controller.set_blackboard_key(BB_LAST_ATTACKED_AT, world.time - AI_COMBAT_CALM_TIME - 1)
+	TEST_ASSERT_EQUAL(recovery.SelectBehaviors(controller, 0.5), SUBTREE_RETURN_FINISH_PLANNING, "Once calm, a hurt beespider should plan to heal.")
+	TEST_ASSERT(LAZYACCESS(controller.current_behaviors, heal), "Once calm, the heal should be queued.")
+	controller.CancelActions()
+
+/// The 8 second heal ran to the end even while something bit the beespider.
+/datum/unit_test/ai_npc_reaction/hit_stops_spider_heal
+
+/datum/unit_test/ai_npc_reaction/hit_stops_spider_heal/Run()
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, run_loc_floor_top_right)
+	var/mob/living/simple_animal/hostile/retaliate/spider/spider = make_hurt_spider(allocate(/datum/targetting_datum/unit_test_one_target))
+	var/datum/ai_controller/controller = spider.ai_controller
+	var/datum/ai_planning_subtree/recovery = GLOB.ai_subtrees[/datum/ai_planning_subtree/simple_self_recovery]
+	recovery.SelectBehaviors(controller, 0.5)
+	for(var/i in 1 to 5)
+		ai_test_ticks(controller, 1)
+		if(spider.doing())
+			break
+	TEST_ASSERT(spider.doing(), "Test setup: the beespider should be healing.")
+	var/brute_before = spider.getBruteLoss()
+
+	SEND_SIGNAL(spider, COMSIG_ATOM_WAS_ATTACKED, attacker, 10)
+	sleep(3)
+	TEST_ASSERT(!spider.doing(), "A hit should stop the heal at once.")
+	TEST_ASSERT_EQUAL(spider.getBruteLoss(), brute_before, "A stopped heal should not heal.")
+	TEST_ASSERT(!LAZYACCESS(controller.current_behaviors, GET_AI_BEHAVIOR(/datum/ai_behavior/simple_rest_and_recuperate)), "A stopped heal should leave the queue.")
+	controller.CancelActions()
+	sleep(2) // lets a running heal return before teardown deletes the spider
+
+/// A badly hurt beespider runs first; the heal waits until the run ends and the calm time passes.
+/datum/unit_test/ai_npc_reaction/fleeing_spider_heals_after_escape
+
+/datum/unit_test/ai_npc_reaction/fleeing_spider_heals_after_escape/Run()
+	var/mob/living/carbon/human/foe = allocate(/mob/living/carbon/human, run_loc_floor_top_right)
+	var/datum/targetting_datum/unit_test_one_target/targeting = allocate(/datum/targetting_datum/unit_test_one_target)
+	var/mob/living/simple_animal/hostile/retaliate/spider/spider = make_hurt_spider(targeting)
+	var/datum/ai_controller/controller = spider.ai_controller
+	var/datum/ai_behavior/heal = GET_AI_BEHAVIOR(/datum/ai_behavior/simple_rest_and_recuperate)
+	targeting.allowed_target = foe
+	controller.set_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET, foe)
+	controller.set_blackboard_key(BB_BASIC_MOB_FLEEING, TRUE)
+
+	ai_test_plan(controller)
+	TEST_ASSERT(LAZYACCESS(controller.current_behaviors, GET_AI_BEHAVIOR(/datum/ai_behavior/run_away_from_target)), "A fleeing beespider should run from its foe.")
+	TEST_ASSERT(!LAZYACCESS(controller.current_behaviors, heal), "A fleeing beespider must not stop to heal.")
+
+	// As if it got away: the run clears the target, and the last hit is old.
+	controller.CancelActions()
+	controller.set_blackboard_key(BB_BASIC_MOB_FLEEING, FALSE)
+	controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
+	targeting.allowed_target = null
+	controller.set_blackboard_key(BB_LAST_ATTACKED_AT, world.time - AI_COMBAT_CALM_TIME - 1)
+	ai_test_plan(controller)
+	TEST_ASSERT(LAZYACCESS(controller.current_behaviors, heal), "A beespider that got away should heal.")
+	controller.CancelActions()

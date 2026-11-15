@@ -32,6 +32,8 @@ type User = {
 export type Config = {
   client: Client;
   interface: IFace;
+  mapInfo: { maxx: number; maxy: number };
+  mapZLevel: number;
   refreshing: BinaryIO;
   status: number;
   title: string;

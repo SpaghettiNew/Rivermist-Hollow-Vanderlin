@@ -174,11 +174,11 @@
 	return ..()
 
 /obj/item/clothing/armor/gambeson/heavy/inq
-	name = "inquisitorial leather tunic"
-	examine_name = "leather tunic"
-	desc = "The finest leather tunic. Made to ENDURE, Made to Inquire, come heretic or hellfire."
+	name = "Hardened leather tunic"
+	desc = "The finest leather tunic. Made to ENDURE, Made to Inquire, come heretic or hellfire. Worn by town watch, mostly."
 	icon_state = "leathertunic"
 	color = null
 	prevent_crits = list(BCLASS_CUT, BCLASS_BLUNT, BCLASS_CHOP)
 	armor_type = /datum/armor/padded
 	body_parts_covered = COVERAGE_ALL_BUT_LEGS
+	social_cues = list("faction:town_watch" = 5)

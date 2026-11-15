@@ -207,3 +207,13 @@ GLOBAL_DATUM_INIT(skirt_peeking_glue, /datum/skirt_peeking_glue, new)
 
 	if(ishuman(new_mob))
 		new_mob.AddElement(/datum/element/skirt_peeking)
+
+/// Returns the first worn layer over the groin that stops a hand reaching the underwear; skirts and aprons let it through.
+/mob/living/carbon/human/proc/get_underwear_blocker()
+	for(var/obj/item/worn in list(wear_pants, wear_armor, wear_shirt, cloak))
+		if(!CHECK_BITFIELD(worn.body_parts_covered, GROIN))
+			continue
+		if(istype(worn, /obj/item/clothing/cloak/apron) || is_type_in_typecache(worn.type, GLOB.skirt_peekable_garments))
+			continue
+		return worn
+	return null

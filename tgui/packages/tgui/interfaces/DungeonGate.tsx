@@ -75,7 +75,7 @@ export function DungeonGate(props) {
           )}
           {!!locked && !sealed && !forsaken && (
             <Stack.Item>
-              <NoticeBox warning>
+              <NoticeBox danger>
                 Locked. A key lies somewhere in this room — take it from
                 whatever carries it.
               </NoticeBox>
@@ -139,7 +139,7 @@ export function DungeonGate(props) {
             <Stack.Item>
               <Section title="The Party">
                 {needsMuster ? (
-                  <NoticeBox warning>
+                  <NoticeBox danger>
                     Still scattered: {muster_missing.join(', ')}. The passage
                     opens only for a gathered party.
                   </NoticeBox>

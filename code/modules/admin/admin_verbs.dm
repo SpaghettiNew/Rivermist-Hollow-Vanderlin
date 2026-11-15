@@ -238,6 +238,12 @@ GLOBAL_PROTECT(admin_verbs_debug)
 	/client/proc/select_job_pack_debug,
 	/client/proc/dungeon_run_debug,
 	/client/proc/dungeon_meta_debug,
+	/client/proc/debugdailysalarypayroll,
+	/client/proc/DebugSocialRecognition,
+	/client/proc/timeskip_to,
+	/client/proc/debug_technician_workshop_equipment,
+	/client/proc/anti_magic_add_global_whitelist,
+	/client/proc/anti_magic_remove_global_whitelist,
 )
 GLOBAL_LIST_INIT(admin_verbs_possess, list(/proc/possess, GLOBAL_PROC_REF(release)))
 GLOBAL_PROTECT(admin_verbs_possess)

@@ -22,6 +22,7 @@
 	name = "watch captain's cape"
 	desc = "A cape with a gold-embroidered heraldry of Duskmar Duchy."
 	misc_flags = CRAFTING_TEST_EXCLUDE
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:captain" = 5, "elite:town_watch" = 3)
 
 /obj/item/clothing/cloak/cape/colored/moon_priest
 	color = "#62656C"

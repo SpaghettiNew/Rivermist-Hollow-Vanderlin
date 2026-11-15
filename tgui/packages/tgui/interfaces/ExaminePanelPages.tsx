@@ -232,7 +232,7 @@ const SpecialAttackBadge = (props: {
     <Box
       as="span"
       style={{ display: "inline-block" }}
-      onMouseEnter={onEnter}
+      onMouseOver={onEnter}
       onMouseLeave={onLeave}
     >
       <Icon name="burst" mr={0.5} />

@@ -15,7 +15,3 @@ mock.module('../logging', () => ({
   createLogger: () => logger,
   logger,
 }));
-
-mock.module('../events/act', () => ({
-  sendAct: () => ({}),
-}));

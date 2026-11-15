@@ -271,6 +271,13 @@
 	created_item = /obj/item/clothing/head/helmet/townwatch/gatemaster
 	craftdiff = 1
 
+/datum/anvil_recipe/armor/iron/townbarbute
+	name = "Town Watch Barbute (+Bar)"
+	recipe_name = "a heavy iron helmet"
+	additional_items = list(/obj/item/ingot/iron)
+	created_item = /obj/item/clothing/head/helmet/townbarbute
+	craftdiff = 3
+
 /datum/anvil_recipe/armor/iron/winged_helmet
 	name = "Winged Helmet"
 	recipe_name = "an iron helmet"
@@ -285,9 +292,16 @@
 
 /datum/anvil_recipe/armor/steel/bastion_helm
 	name = "Bastion helm (+Bar X2)"
-	recipe_name = "a heavy steel bastion helmet"
+	recipe_name = "a heavy steel bastion helmet. Often worn by the elite of the town watch."
 	additional_items = list(/obj/item/ingot/steel, /obj/item/ingot/steel)
 	created_item = /obj/item/clothing/head/helmet/heavy/necked
+	craftdiff = 2
+
+/datum/anvil_recipe/armor/steel/warden_helm
+	name = "Warden's helmet (+Bar X1)"
+	recipe_name = "a heavy steel helmet. Often worn by the Prosecutors of the town watch."
+	additional_items = list(/obj/item/ingot/steel)
+	created_item = /obj/item/clothing/head/helmet/townwatch/town_warden
 	craftdiff = 2
 
 /datum/anvil_recipe/armor/steel/pegasusknighthelm
@@ -296,6 +310,13 @@
 	additional_items = list(/obj/item/natural/cloth)
 	created_item = /obj/item/clothing/head/helmet/pegasusknight
 	craftdiff = 2
+
+/datum/anvil_recipe/armor/steel/bulwarkhelm
+	name = "Veteran's watch helmet (+Cloth)"
+	recipe_name = "archaic helmet of a symbol long forgotten"
+	additional_items = list(/obj/item/natural/cloth)
+	created_item = /obj/item/clothing/head/helmet/townwatch/gatemaster/bulwark
+	craftdiff = 4
 
 /datum/anvil_recipe/armor/steel/crusader_helm
 	name = "Crusader helm (+Bar X2)"

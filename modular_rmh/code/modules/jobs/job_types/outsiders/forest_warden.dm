@@ -41,7 +41,9 @@
 
 	selection_color = JCOLOR_OUTSIDERS
 	outfit = /datum/outfit/forest_warden
+
 	give_bank_account = 45
+	daily_salary = 10
 
 	exp_type = list(EXP_TYPE_GARRISON)
 	exp_types_granted = list(EXP_TYPE_GARRISON, EXP_TYPE_COMBAT, EXP_TYPE_LEADERSHIP)

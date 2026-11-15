@@ -1,3 +1,8 @@
+#define DOOR_KICK_HARD 6
+#define DOOR_KICK_STURDY 3
+#define DOOR_KICK_MEDIUM 2
+#define DOOR_KICK_WEAK 1
+
 /obj/structure/door
 	name = "wooden door"
 	desc = "A door that can open and close."
@@ -39,8 +44,8 @@
 	var/windowed = FALSE
 	/// Last bump time
 	var/last_bump = null
-	/// Initial value is STR requirement to kick, then var is used as how many kicks to force open
-	var/kickthresh = 15
+	/// Number of kicks before this door is forced open.
+	var/kickthresh = DOOR_KICK_MEDIUM
 	/// Can we knock on the door
 	var/can_knock = TRUE
 	/// Are ghosts prevented from passing through
@@ -122,12 +127,11 @@
 		return
 	if(isliving(user))
 		var/mob/living/L = user
-		if(GET_MOB_ATTRIBUTE_VALUE(L, STAT_STRENGTH) < initial(kickthresh))
-			playsound(src, pick(attacked_sound), 100)
-			user.visible_message(span_warning("[user] kicks [src]! It's not effective."), \
-			span_notice("I kick [src]! It's not effective."))
-			return
-		if((prob(GET_MOB_ATTRIBUTE_VALUE(L, STAT_STRENGTH) * 0.5) || kickthresh-- == 0))
+		var/total_kicks = max(initial(kickthresh), 1)
+		var/kick_progress = 1 - (max(kickthresh, 1) / total_kicks)
+		var/integrity_bonus = (1 - clamp(get_integrity_percentage(), 0, 1)) * 50
+		var/kick_chance = clamp((GET_MOB_ATTRIBUTE_VALUE(L, STAT_STRENGTH) * 0.5) + (kick_progress * 25) + integrity_bonus, 5, 95)
+		if(prob(kick_chance) || kickthresh-- <= 1)
 			playsound(src, pick(attacked_sound), 100)
 			user.visible_message(span_warning("[user] kicks open [src]!"), \
 				span_notice("I kick open [src]!"))
@@ -516,7 +520,7 @@
 /obj/structure/door/weak
 	icon_state = "wood"
 	max_integrity = 500
-	kickthresh = 10
+	kickthresh = DOOR_KICK_WEAK
 	open_sound = 'sound/foley/doors/shittyopen.ogg'
 	close_sound = 'sound/foley/doors/shittyclose.ogg'
 	metalizer_result = null
@@ -543,6 +547,7 @@
 	icon_state = "donjon"
 	armor_type = /datum/armor/door/heavy
 	max_integrity = 2000
+	kickthresh = DOOR_KICK_HARD
 	damage_deflection = 15
 	resistance_flags = FIRE_PROOF
 	blade_dulling = DULLING_BASH
@@ -560,6 +565,7 @@
 /obj/structure/door/iron/bars
 	icon_state = "bars"
 	max_integrity = 1000
+	kickthresh = DOOR_KICK_STURDY
 	blade_dulling = DULLING_BASHCHOP
 	windowed = TRUE
 	opacity = FALSE
@@ -571,11 +577,12 @@
 
 /obj/structure/door/iron/bars/cell
 	name = "cell door"
-	kickthresh = 20
+	kickthresh = DOOR_KICK_HARD
 
 /obj/structure/door/stone
 	name = "stone door"
 	icon_state = "stone"
+	kickthresh = DOOR_KICK_HARD
 	armor_type = /datum/armor/door/heavy
 	open_sound = 'sound/foley/doors/stoneopen.ogg'
 	close_sound = 'sound/foley/doors/stoneclose.ogg'

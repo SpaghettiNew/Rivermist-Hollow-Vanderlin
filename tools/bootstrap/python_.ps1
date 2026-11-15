@@ -65,7 +65,9 @@ if (!(Test-Path $PythonExe -PathType Leaf)) {
 if (!(Test-Path "$PythonDir/Scripts/pip.exe")) {
 	$host.ui.RawUI.WindowTitle = "Downloading Pip..."
 
-	Invoke-WebRequest "https://bootstrap.pypa.io/get-pip.py" `
+	# The unversioned get-pip.py drops old Pythons; the per-version copy keeps working.
+	$PipPythonVersion = ($PythonVersion.Split(".")[0..1]) -join "."
+	Invoke-WebRequest "https://bootstrap.pypa.io/pip/$PipPythonVersion/get-pip.py" `
 		-OutFile "$Cache/get-pip.py" `
 		-ErrorAction Stop
 

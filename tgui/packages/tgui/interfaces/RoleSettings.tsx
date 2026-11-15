@@ -297,7 +297,7 @@ const PickerSection = ({ setting, act }) => {
         ))}
         {available.length > 0 && lines.length < max_lines && (
           <Stack.Item>
-            <Section title="Available" level={2}>
+            <Section title="Available">
               <Stack vertical>
                 {available.map((option) => (
                   <Stack.Item key={option.value}>

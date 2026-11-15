@@ -120,8 +120,11 @@
 		if(HAS_TRAIT(src, TRAIT_CHUNKYFINGERS))
 			to_chat(src, "<span class='warning'>My meaty finger is much too large for the trigger guard!</span>")
 			return FALSE
+	if(HAS_TRAIT(src, TRAIT_ROTFINGERS))
+		to_chat(src, "<span class='warning'>My fingers are too rotted and swollen to use ranged weaponry!</span>")
+		return FALSE
 	if(HAS_TRAIT(src, TRAIT_NOGUNS))
-		to_chat(src, "<span class='warning'>I can't bring myself to use a ranged weapon!</span>")
+		to_chat(src, "<span class='warning'>I'm not good enough to use a ranged weapon!</span>")
 		return FALSE
 
 /mob/living/carbon/human/get_policy_keywords()

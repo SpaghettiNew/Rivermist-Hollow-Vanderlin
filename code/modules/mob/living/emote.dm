@@ -165,6 +165,16 @@
 	emote_type = EMOTE_AUDIBLE
 	only_forced_audio = TRUE
 
+/datum/emote/living/attack
+	key = "attack"
+	message = "shouts to attack!"
+	emote_type = EMOTE_AUDIBLE
+	only_forced_audio = FALSE
+
+/mob/living/carbon/human/verb/emote_attack()
+	set name = "Yell to attack"
+	set category = "Emotes.Noises"
+	emote("attack", intentional = TRUE)
 // ............... B ..................
 /datum/emote/living/blush
 	key = "blush"
@@ -497,6 +507,17 @@
 	nomsg = TRUE
 	only_forced_audio = TRUE
 
+/datum/emote/living/gogogo
+	key = "gogogo"
+	message = "Yells to go!"
+	emote_type = EMOTE_AUDIBLE
+	only_forced_audio = FALSE
+
+/mob/living/carbon/human/verb/emote_gogogo()
+	set name = "Yell 'Go!'"
+	set category = "Emotes.Noises"
+	emote("gogogo", intentional = TRUE)
+
 // ............... H ..................
 /datum/emote/living/haltyell
 	key = "haltyell"
@@ -618,6 +639,16 @@
 			if(prob(10))
 				H.emote("purr")
 
+/datum/emote/living/holdposition
+	key = "holdposition"
+	message = "shouts to hold position!"
+	emote_type = EMOTE_AUDIBLE
+	only_forced_audio = FALSE
+
+/mob/living/carbon/human/verb/emote_holdposition()
+	set name = "Yell 'Hold Position'"
+	set category = "Emotes.Noises"
+	emote("holdposition", intentional = TRUE)
 
 // ............... I ..................
 /datum/emote/living/idle

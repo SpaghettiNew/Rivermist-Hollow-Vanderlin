@@ -13,6 +13,7 @@
 #define JOB_UNAVAILABLE_JOB_COOLDOWN 13
 #define JOB_UNAVAILABLE_RACE_BANNED 14
 #define JOB_UNAVAILABLE_WHITELIST 15
+#define JOB_UNAVAILABLE_REQUIRED_JOB 16
 
 /* Job datum job_flags */
 /// Whether the mob is announced on arrival.
@@ -123,6 +124,7 @@
 #define JDO_WATCH_VETERAN 7
 #define JDO_WATCH_WARDEN 7.5
 #define JDO_WATCH_GUARD 8
+#define JDO_WATCH_MILITIA 8.5
 //CHAPEL
 #define JDO_MOON_PRIEST 9
 #define JDO_HEART_PRIEST 9.5

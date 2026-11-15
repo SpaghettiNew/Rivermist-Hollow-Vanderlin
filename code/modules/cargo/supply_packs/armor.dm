@@ -91,6 +91,11 @@
 	cost = 45
 	contains = /obj/item/clothing/head/helmet/ironpot/lakkariancap
 
+/datum/supply_pack/armor/iron/coppergatehelm
+	name = "Watch coppergate helm"
+	cost = 150
+	contains = /obj/item/clothing/head/helmet/decorativecoppergate
+
 // MASK COIF NECK
 
 /datum/supply_pack/armor/iron/imask
@@ -124,6 +129,11 @@
 	name = "Iron Plate Armor"
 	cost = 80
 	contains = /obj/item/clothing/armor/plate/full/iron
+
+/datum/supply_pack/armor/steel/wardenhelm
+	name = "Warden's Helmet"
+	cost = 100
+	contains = /obj/item/clothing/head/helmet/visored/warden
 
 // SHIRT ARMOR
 

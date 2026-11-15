@@ -1,9 +1,9 @@
 import { useBackend, useLocalState } from '../backend';
 import { Box, Button, ProgressBar, Section, Stack, Tooltip } from 'tgui-core/components';
 import { Window } from '../layouts';
-import { TutorialOverlay } from '../interfaces/_common/TutorialOverlay';
+import { TutorialOverlay, type TutorialStep } from '../interfaces/_common/TutorialOverlay';
 
-const TUTORIAL_STEPS = [
+const TUTORIAL_STEPS: TutorialStep[] = [
   {
     title: 'Chimeric Organ Interface',
     body: 'This menu lets you inspect and rewire the humor nodes stitched into this chimeric organ. Nodes must be paired an input drives an output.',
@@ -142,7 +142,7 @@ const NodeRow = (props: {
         </Stack>
       </Button>
       <Box ml={1}>
-        <Stack align="center" spacing={1}>
+        <Stack align="center">
           <Stack.Item grow>
             <ProgressBar
               value={node.purity / 100}
@@ -175,11 +175,11 @@ const ChimericPanel = (props: { data: ChimericHeartData; act: (action: string, p
     blood_requirements,
   } = data;
 
-  const [selectedInput, setSelectedInput] = useLocalState(
+  const [selectedInput, setSelectedInput] = useLocalState<string | null>(
     'selected_input',
     null,
   );
-  const [selectedOutput, setSelectedOutput] = useLocalState(
+  const [selectedOutput, setSelectedOutput] = useLocalState<string | null>(
     'selected_output',
     null,
   );

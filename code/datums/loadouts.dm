@@ -659,3 +659,7 @@ GLOBAL_LIST_EMPTY(loadout_items)
 	name = "Pocket Rous"
 	item_path = /obj/item/reagent_containers/food/snacks/smallrat
 	required_award = /datum/award/achievement/progress/rat_genocide
+
+/datum/loadout_item/leather_apron
+	name = "Leather apron"
+	item_path = /obj/item/clothing/cloak/apron/brown

@@ -258,6 +258,7 @@
 				"honorary_choices" = get_job_alt_choices(job, "honorary"),
 				"has_info" = !!job.class_setup_examine,
 				"details" = character_setup_job_details(job),
+				"required_jobs" = job.get_required_job_titles(),
 			))
 		if(length(job_entries))
 			categories += list(list(

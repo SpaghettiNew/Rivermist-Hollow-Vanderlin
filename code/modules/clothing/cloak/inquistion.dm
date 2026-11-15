@@ -61,6 +61,7 @@
 	nodismemsleeves = TRUE
 	inhand_mod = TRUE
 	has_storage = TRUE
+	social_cues = list("faction:town_watch" = 5)
 
 /obj/item/clothing/cloak/absolutionistrobe
 	name = "absolver's robe"

@@ -121,7 +121,7 @@
 	armor_type = /datum/armor/leather/good
 	max_integrity = ARMOR_INT_CHEST_LIGHT_MASTER + 25 // Head Honcho gets a buff
 	sellprice = 25
-
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:captain" = 5, "elite:town_watch" = 3)
 
 // this robe spawns on a role that offers no leg protection nor further upgrades to the loadout, in exchange for better roundstart gear
 

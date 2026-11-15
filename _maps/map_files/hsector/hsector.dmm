@@ -78119,6 +78119,10 @@
 /obj/structure/flora/grass/crawlvines,
 /turf/open/openspace,
 /area/outdoors/rmh_field/basinruin)
+"ybW" = (
+/obj/structure/fake_machine/technician_workshop,
+/turf/closed/wall/mineral/stonebrick,
+/area/indoors/town/rmh/garrison)
 "ybX" = (
 /obj/structure/fluff/walldeco/church/line{
 	dir = 4
@@ -250272,7 +250276,7 @@ gLU
 gLU
 gLU
 ipc
-ipc
+ybW
 pGF
 oSc
 xHT

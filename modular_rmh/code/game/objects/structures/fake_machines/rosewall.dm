@@ -77,7 +77,7 @@ GLOBAL_LIST_EMPTY(rosewall_boards)
 		return
 	var/list/root = safe_json_decode(file2text(save_path))
 	if(!islist(root) || !islist(root["posts"]))
-		log_game("Rosewall: [save_path] could not be read, the board starts empty.")
+		log_game("Cupids Crossbow: [save_path] could not be read, the board starts empty.")
 		return
 	var/today = current_day()
 	var/list/seen_notes = list()
@@ -208,8 +208,8 @@ GLOBAL_LIST_EMPTY(rosewall_boards)
 	return istype(job, /datum/job/advclass/towner/town_mouth) || istype(job, /datum/job/burgmeister) || istype(job, /datum/job/advclass/burgmeister)
 
 /obj/structure/fake_machine/rosewall
-	name = "Rosewall"
-	desc = "A board for personal notes: who you are and who you hope to meet. Anyone may pin one note for each of their characters, read every note, and take their own note down. Notes stay up between rounds."
+	name = "Cupid's Crossbow"
+	desc = "A board for your hopes and dreams. Shoot your shot: leave a note with your description, whom you wish to meet, and hope your second half finds you."
 	icon = 'modular_rmh/icons/obj/structures/rosewall.dmi'
 	icon_state = "noticeboardbh0"
 	density = FALSE
@@ -309,7 +309,7 @@ GLOBAL_LIST_EMPTY(rosewall_boards)
 			if(next_action_at[stale_key] <= world.time)
 				next_action_at -= stale_key
 	if(next_action_at[key] > world.time)
-		to_chat(user, span_warning("Wait a moment before changing the Rosewall again."))
+		to_chat(user, span_warning("Wait a moment before changing the Cupid's Crossbow again."))
 		return TRUE
 	next_action_at[key] = world.time + ROSEWALL_ACTION_COOLDOWN
 	return FALSE
@@ -321,7 +321,7 @@ GLOBAL_LIST_EMPTY(rosewall_boards)
 		to_chat(user, span_warning("My note is empty."))
 		return
 	if(!store.find_own_post(key, user.real_name) && store.count_posts_by(key) >= ROSEWALL_MAX_POSTS_PER_PLAYER)
-		to_chat(user, span_warning("I already have [ROSEWALL_MAX_POSTS_PER_PLAYER] notes on the Rosewall. Take one down first."))
+		to_chat(user, span_warning("I already have [ROSEWALL_MAX_POSTS_PER_PLAYER] notes on the Cupid's Crossbow. Take one down first."))
 		return
 	if(on_cooldown(user))
 		return
@@ -329,10 +329,10 @@ GLOBAL_LIST_EMPTY(rosewall_boards)
 	if(!post)
 		to_chat(user, span_warning("The note could not be pinned."))
 		return
-	to_chat(user, span_notice("I pin my note to the Rosewall."))
+	to_chat(user, span_notice("I pin my note to the Cupid's Crossbow."))
 	playsound(loc, 'sound/foley/dropsound/paper_drop.ogg', 50, FALSE, -1)
-	log_paper("[key_name(user)] pinned a Rosewall note as [post.character_name]. Looking for: [post.seeking]. Note: [post.text]")
-	message_admins("[ADMIN_LOOKUPFLW(user)] pinned a Rosewall note as [html_encode(post.character_name)].")
+	log_paper("[key_name(user)] pinned a Cupids Crossbow note as [post.character_name]. Looking for: [post.seeking]. Note: [post.text]")
+	message_admins("[ADMIN_LOOKUPFLW(user)] pinned a Cupids Crossbow note as [html_encode(post.character_name)].")
 
 /obj/structure/fake_machine/rosewall/proc/remove_post(mob/living/carbon/human/user, list/params)
 	var/datum/rosewall_store/store = GLOB.rosewall
@@ -341,19 +341,19 @@ GLOBAL_LIST_EMPTY(rosewall_boards)
 		return
 	var/is_own = post.author_ckey == author_key(user)
 	if(!is_own && !rosewall_can_moderate(user))
-		to_chat(user, span_warning("Only the writer, the Town Mouth, the burgmeister or an admin can take this note down."))
+		to_chat(user, span_warning("Only the writer, the Town Mouth, the burgmeister or higher forces can take this note down."))
 		return
 	if(on_cooldown(user))
 		return
 	store.remove_post(post)
 	playsound(loc, 'sound/foley/dropsound/paper_drop.ogg', 50, FALSE, -1)
 	if(is_own)
-		to_chat(user, span_notice("I take my note down from the Rosewall."))
-		log_paper("[key_name(user)] took down their Rosewall note as [post.character_name].")
+		to_chat(user, span_notice("I take my note down from the Cupid's Crossbow."))
+		log_paper("[key_name(user)] took down their Cupids Crossbow note as [post.character_name].")
 		return
 	to_chat(user, span_notice("I take down the note of [post.character_name]."))
-	log_paper("[key_name(user)] took down the Rosewall note of [post.character_name] ([post.author_ckey]).")
-	message_admins("[ADMIN_LOOKUPFLW(user)] took down the Rosewall note of [html_encode(post.character_name)] ([post.author_ckey]).")
+	log_paper("[key_name(user)] took down the Cupids Crossbow note of [post.character_name] ([post.author_ckey]).")
+	message_admins("[ADMIN_LOOKUPFLW(user)] took down the Cupids Crossbow note of [html_encode(post.character_name)] ([post.author_ckey]).")
 
 #undef ROSEWALL_SAVE_FILE
 #undef ROSEWALL_SAVE_VERSION

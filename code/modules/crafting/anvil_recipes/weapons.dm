@@ -908,6 +908,21 @@
 	created_item = /obj/item/weapon/knife/throwingknife/steel
 	createditem_extra = 4
 
+/datum/anvil_recipe/weapons/steel/charmbardiche
+	name = "Charm Bardiche (+Cloth, +Bardiche)"
+	recipe_name = "a Charm's Bardiche. A great tool for keeping morale high in corps."
+	appro_skill = /datum/attribute/skill/craft/weaponsmithing
+	additional_items = list(/obj/item/weapon/polearm/halberd/bardiche, /obj/item/natural/cloth)
+	created_item = /obj/item/weapon/polearm/halberd/watch_charm
+
+/datum/anvil_recipe/weapons/steel/chainbola
+	name = "Chain Bola (+Steel Chain +lead ball)"
+	recipe_name = "a chain Bola"
+	appro_skill = /datum/attribute/skill/craft/weaponsmithing
+	additional_items = list(/obj/item/rope/chain/steel, /obj/item/ammo_casing/caseless/bullet)
+	created_item = /obj/item/rope/net/bola/chain
+	craftdiff = 2
+
 // --------- SILVER ------------  Harder to craft, does less damage and has less durability than steel, but banes undead.
 
 /datum/anvil_recipe/weapons/silver
@@ -1098,3 +1113,28 @@
 	additional_items = list(/obj/item/ingot/gold, /obj/item/grown/log/tree)
 	created_item = /obj/item/weapon/mace/cane/noble
 	i_type = "Weapons"
+
+/datum/anvil_recipe/weapons/silver/silverbola
+	name = "Silver Bola (+Silver Chain + Lead Ball)"
+	recipe_name = "a silver bola"
+	appro_skill = /datum/attribute/skill/craft/weaponsmithing
+	additional_items = list(/obj/item/rope/chain/silver, /obj/item/ammo_casing/caseless/bullet)
+	created_item = /obj/item/rope/net/bola/silver
+	craftdiff = 2
+
+// --------- THAUMIC IRON -----------
+
+/datum/anvil_recipe/weapons/thaumic
+	abstract_type = /datum/anvil_recipe/weapons/thaumic
+	req_bar = /obj/item/ingot/thaumic
+	craftdiff = 3
+
+// ----------------------------------
+
+/datum/anvil_recipe/weapons/thaum/thaumicbola
+	name = "Thaumic Bola + Rope"
+	recipe_name = "An thaumic Bola"
+	req_bar = /obj/item/ingot/thaumic
+	additional_items = list(/obj/item/rope)
+	created_item = /obj/item/rope/net/bola/thaum
+	craftdiff = 3

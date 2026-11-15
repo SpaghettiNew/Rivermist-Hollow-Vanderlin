@@ -24,6 +24,7 @@
 	)
 
 	give_bank_account = 80
+	daily_salary = 10
 	exp_types_granted = list(EXP_TYPE_MAGICK, EXP_TYPE_LIVING)
 	exp_type = list(EXP_TYPE_LIVING)
 	exp_requirements = list(EXP_TYPE_LIVING = 250)

@@ -21,11 +21,12 @@
 	if(!user.has_hand_for_held_index(user.active_hand_index, TRUE)) //we obviously have a hand, but we need to check for fingers/prosthetics
 		to_chat(user, span_warning("I can't move the fingers of my [user.active_hand_index == 1 ? "left" : "right"] hand.</span>"))
 		return TRUE
+/*
 	if(!istype(src, /obj/item/grabbing))
 		if(HAS_TRAIT(user, TRAIT_CHUNKYFINGERS))
 			to_chat(user, span_warning("...What?"))
 			return TRUE
-
+*/
 	var/is_right_clicking = LAZYACCESS(modifiers, RIGHT_CLICK)
 
 	var/item_interact_result = target.base_item_interaction(user, src, modifiers)

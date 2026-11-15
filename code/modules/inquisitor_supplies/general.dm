@@ -376,7 +376,7 @@
 /obj/item/clothing/armor/gambeson/heavy/otavan/inq
 	color = "#8b1414"
 	detail_color = "#99b2b1"
-
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:sergeant" = 5, "elite:town_watch" = 3)
 /datum/inqports/wardrobe/fencerset
 	name = "The Darkholdian Fencer's Finest Set Crate"
 	item_type = /obj/structure/closet/crate/chest/inqcrate/wardrobe/fencerset

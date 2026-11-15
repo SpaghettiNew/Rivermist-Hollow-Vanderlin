@@ -259,6 +259,9 @@ const en = {
   subrolesAvailable: 'This role has sub-roles:',
   chooseSubrole: 'Choose a sub-role',
   subroleNeedsHigh: 'Set this role to High priority to pick a preferred sub-role.',
+  requiredJobs: 'Needs one of these roles in the round',
+  requiredJobsHint:
+    'At round start, you get this role only if one of these roles is also taken. If not, your next priority is used. To join later, one of these roles must be in the round.',
   classDetails: 'Class details',
   startingStats: 'Starting stats',
   statLimits: 'Stat limits',
@@ -826,6 +829,9 @@ const ru: CharacterCreatorStrings = {
   subrolesAvailable: 'У этой роли есть подклассы:',
   chooseSubrole: 'Выбрать подкласс',
   subroleNeedsHigh: 'Поставьте роли высокий приоритет, чтобы выбрать предпочитаемый подкласс.',
+  requiredJobs: 'Нужна одна из этих ролей в раунде',
+  requiredJobsHint:
+    'В начале раунда вы получите эту роль, только если одна из этих ролей тоже занята. Иначе используется следующий приоритет. Чтобы войти позже, одна из этих ролей должна быть в раунде.',
   classDetails: 'О классе',
   startingStats: 'Начальные характеристики',
   statLimits: 'Пределы характеристик',

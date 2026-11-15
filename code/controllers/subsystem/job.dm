@@ -188,6 +188,10 @@ SUBSYSTEM_DEF(job)
 			JobDebug("GRJ player tried to play a disabled job, Player: [player], Job:[job.title]")
 			continue
 
+		if(!job.required_jobs_present())
+			JobDebug("GRJ required jobs absent, Player: [player], Job: [job.title]")
+			continue
+
 		if(!job.player_has_required_whitelists(player.client))
 			JobDebug("GRJ whitelist failed, Player: [player], Job: [job.title]")
 			continue
@@ -344,12 +348,40 @@ SUBSYSTEM_DEF(job)
 
 	var/list/shuffledoccupations = shuffle(joinable_occupations)
 
+	// Gated jobs wait until the other picks are made, so their required jobs are known.
+	var/list/held_players = assign_by_preference(unassigned, shuffledoccupations, TRUE)
+	if(length(held_players))
+		JobDebug("DO, Running gated job check, Len: [length(held_players)]")
+		assign_by_preference(held_players, shuffledoccupations, FALSE)
+
+	JobDebug("DO, Handling unassigned.")
+	// Hand out random jobs to the people who didn't get any
+	for(var/mob/dead/new_player/player in unassigned)
+		HandleUnassigned(player)
+
+	JobDebug("DO, Handling unrejectable unassigned")
+	// Mop up people who can't leave
+	for(var/mob/dead/new_player/player in unassigned)
+		RejectPlayer(player)
+
+	return validate_required_jobs(required_jobs)
+
+#define PREF_ASSIGN_NONE 0
+#define PREF_ASSIGN_DONE 1
+#define PREF_ASSIGN_HELD 2
+
+/// Assigns jobs by priority level to unassigned players from the pool.
+/// With defer_gated, a player whose pick waits on a required job is held and returned.
+/datum/controller/subsystem/job/proc/assign_by_preference(list/players, list/occupations, defer_gated)
+	var/list/held = list()
 	// Loop through all priority levels from high to low
 	for(var/level in level_order)
 		// Create a weighted list of players based on their boosts
 		var/list/weighted_players = list()
 
-		for(var/mob/dead/new_player/player in unassigned)
+		for(var/mob/dead/new_player/player in players)
+			if(!(player in unassigned) || (player in held))
+				continue
 			if(PopcapReached())
 				RejectPlayer(player)
 				continue
@@ -379,92 +411,64 @@ SUBSYSTEM_DEF(job)
 				JobDebug("DO player deleted during assignment")
 				continue
 
-			// Loop through characters FIRST (in priority order), then their preferred jobs
-			var/assigned = FALSE
+			switch(assign_player_at_level(player, level, occupations, defer_gated))
+				if(PREF_ASSIGN_DONE)
+					unassigned -= player
+				if(PREF_ASSIGN_HELD)
+					held += player
+	return held
 
-			if(length(player.multi_ready_characters))
-				for(var/char_idx in 1 to length(player.multi_ready_characters))
-					if(assigned)
-						break
+/// Tries the jobs a player wants at one level. Characters are tried in priority order.
+/datum/controller/subsystem/job/proc/assign_player_at_level(mob/dead/new_player/player, level, list/occupations, defer_gated)
+	if(!length(player.multi_ready_characters))
+		return assign_player_from_prefs(player, player.client.prefs.job_preferences, level, occupations, defer_gated)
 
-					var/list/char_data = player.multi_ready_characters[char_idx]
-					var/list/char_job_prefs = char_data["job_preferences"]
+	for(var/char_idx in 1 to length(player.multi_ready_characters))
+		var/list/char_data = player.multi_ready_characters[char_idx]
+		var/list/char_job_prefs = char_data["job_preferences"]
+		if(!length(char_job_prefs))
+			continue
 
-					if(!length(char_job_prefs))
-						continue
+		// Apply this character temporarily for eligibility checks
+		player.apply_multi_ready_character(char_idx)
+		var/result = assign_player_from_prefs(player, char_job_prefs, level, occupations, defer_gated)
+		if(result == PREF_ASSIGN_DONE)
+			JobDebug("Multi-char DO: Player [player], Char [char_idx] (Slot [char_data["slot"]])")
+		// A held character keeps its priority over later characters.
+		if(result != PREF_ASSIGN_NONE)
+			return result
+	return PREF_ASSIGN_NONE
 
-					// Apply this character temporarily for eligibility checks
-					player.apply_multi_ready_character(char_idx)
+/datum/controller/subsystem/job/proc/assign_player_from_prefs(mob/dead/new_player/player, list/job_prefs, level, list/occupations, defer_gated)
+	var/held = FALSE
+	for(var/datum/job/job in occupations)
+		if(job_prefs[job.title] != level)
+			continue
 
-					// Now check all jobs this character wants at this priority level
-					for(var/datum/job/job in shuffledoccupations)
-						if(!job)
-							continue
+		if(!job.has_open_position())
+			continue
 
-						// Does this character want this job at this priority level?
-						if(char_job_prefs[job.title] != level)
-							continue
+		if(!job.required_jobs_present())
+			if(defer_gated)
+				held = TRUE
+			continue
 
-						// Is the job available?
-						if(!job.has_open_position())
-							continue
+		if(!check_job_eligibility(player, job))
+			continue
 
-						// Is this character eligible?
-						if(!check_job_eligibility(player, job))
-							continue
+		JobDebug("DO: Player [player], Job [job.title]")
+		if(AssignRole(player, job))
+			var/list/player_boosts = get_player_boosts(player)
+			for(var/datum/job_priority_boost/boost in player_boosts)
+				if(boost.can_boost_job(job))
+					boost.use_boost()
+					JobDebug("DO boost used, Player: [player], Job: [job.title]")
+			return PREF_ASSIGN_DONE
+	return held ? PREF_ASSIGN_HELD : PREF_ASSIGN_NONE
 
-						// Success! Assign the job
-						JobDebug("Multi-char DO: Player [player], Char [char_idx] (Slot [char_data["slot"]]), Job [job.title]")
-						if(AssignRole(player, job))
-
-							// Handle boosts
-							var/list/player_boosts = get_player_boosts(player)
-							for(var/datum/job_priority_boost/boost in player_boosts)
-								if(boost.can_boost_job(job))
-									boost.use_boost()
-									JobDebug("DO boost used, Player: [player], Job: [job.title]")
-
-							assigned = TRUE
-							break
-			else
-				// Single character mode: just loop through jobs normally
-				for(var/datum/job/job in shuffledoccupations)
-					if(!job)
-						continue
-
-					if(player.client.prefs.job_preferences[job.title] != level)
-						continue
-
-					if(!job.has_open_position())
-						continue
-
-					if(!check_job_eligibility(player, job))
-						continue
-
-					JobDebug("Single-char DO: Player [player], Job [job.title]")
-					if(AssignRole(player, job))
-						var/list/player_boosts = get_player_boosts(player)
-						for(var/datum/job_priority_boost/boost in player_boosts)
-							if(boost.can_boost_job(job))
-								boost.use_boost()
-								JobDebug("DO boost used, Player: [player], Job: [job.title]")
-						assigned = TRUE
-						break
-
-			if(assigned)
-				unassigned -= player
-
-	JobDebug("DO, Handling unassigned.")
-	// Hand out random jobs to the people who didn't get any
-	for(var/mob/dead/new_player/player in unassigned)
-		HandleUnassigned(player)
-
-	JobDebug("DO, Handling unrejectable unassigned")
-	// Mop up people who can't leave
-	for(var/mob/dead/new_player/player in unassigned)
-		RejectPlayer(player)
-
-	return validate_required_jobs(required_jobs)
+#undef PREF_ASSIGN_NONE
+#undef PREF_ASSIGN_DONE
+#undef PREF_ASSIGN_HELD
 
 /datum/controller/subsystem/job/proc/get_player_boosts(mob/dead/new_player/player)
 	var/list/boosts = list()

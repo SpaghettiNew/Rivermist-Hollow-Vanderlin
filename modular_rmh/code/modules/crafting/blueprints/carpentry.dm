@@ -1,3 +1,23 @@
+/datum/blueprint_recipe/carpentry/stationary_anti_magic_field
+	name = "stationary anti-magic field generator"
+	desc = "A heavy field generator that suppresses hostile magic."
+	result_type = /obj/structure/anti_magic_field/stationary
+	required_materials = list(
+		/obj/item/ingot/silver = 2,
+		/obj/item/ingot/steel = 2
+	)
+	construct_tool = /obj/item/weapon/hammer
+	category = "Structures"
+	skillcraft = /datum/attribute/skill/craft/carpentry
+	craftdiff = 3
+	build_time = 5 SECONDS
+
+/datum/blueprint_recipe/carpentry/stationary_anti_magic_field/check_craft_requirements(mob/user, turf/T, obj/structure/blueprint/blueprint)
+	if(!user.mind || GET_MOB_SKILL_VALUE_OLD(user, /datum/attribute/skill/craft/carpentry) < 20)
+		to_chat(user, span_warning("I need at least 20 Carpentry to build [name]."))
+		return FALSE
+	return ..()
+
 /datum/blueprint_recipe/carpentry/torture_table
 	name = "torture table"
 	desc = "A cruel table meant for restraining captives."

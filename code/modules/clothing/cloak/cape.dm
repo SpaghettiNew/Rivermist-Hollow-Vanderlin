@@ -24,6 +24,7 @@
 	name = "guard's cape"
 	color = CLOTHING_BLOOD_RED
 	uses_lord_coloring = LORD_PRIMARY
+	social_cues = list("faction:town_watch" = 5)
 
 /obj/item/clothing/cloak/captain
 	name = "captain's cape"
@@ -37,6 +38,7 @@
 	alternate_worn_layer = CLOAK_BEHIND_LAYER
 	detail_color = CLOTHING_BERRY_BLUE
 	uses_lord_coloring = LORD_PRIMARY
+	social_cues = list("faction:town_watch" = 5)
 
 /obj/item/clothing/cloak/cape/archivist
 	icon_state = "puritan_cape"

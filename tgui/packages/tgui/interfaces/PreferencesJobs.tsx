@@ -221,36 +221,35 @@ export const PreferencesJobs = () => {
                       paddingLeft: '7px',
                     }}
                   >
-                    <Box
-                      bold={state.status === 'available'}
-                      style={
-                        job.has_info
-                          ? { textDecoration: 'underline', cursor: 'pointer' }
-                          : undefined
-                      }
-                      title={job.has_info ? 'Click for class details' : undefined}
-                      onClick={
-                        job.has_info
-                          ? () => act('job_explain', { job: job.title })
-                          : undefined
-                      }
-                    >
-                      {state.status === 'available'
-                        ? state.current_title
-                        : state.display_name}
-                    </Box>
+                    <span title={job.has_info ? 'Click for class details' : undefined}>
+                      <Box
+                        bold={state.status === 'available'}
+                        style={
+                          job.has_info
+                            ? { textDecoration: 'underline', cursor: 'pointer' }
+                            : undefined
+                        }
+                        onClick={
+                          job.has_info
+                            ? () => act('job_explain', { job: job.title })
+                            : undefined
+                        }
+                      >
+                        {state.status === 'available'
+                          ? state.current_title
+                          : state.display_name}
+                      </Box>
+                    </span>
                     {state.current_honorary ? (
                       <Box color="label" fontSize="11px">
                         Honorary: {state.current_honorary}
                       </Box>
                     ) : null}
-                    <Box
-                      color="label"
-                      fontSize="11px"
-                      title={job.tutorial}
-                    >
-                      {job.slots} slot{job.slots === 1 ? '' : 's'}
-                    </Box>
+                    <span title={job.tutorial}>
+                      <Box color="label" fontSize="11px">
+                        {job.slots} slot{job.slots === 1 ? '' : 's'}
+                      </Box>
+                    </span>
                     {state.status === 'banned' ? (
                       <Box color="bad" fontSize="11px" bold>
                         BANNED

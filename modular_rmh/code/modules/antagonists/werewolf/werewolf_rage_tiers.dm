@@ -148,7 +148,9 @@
 /// Kills and climaxes inside make the lunge ready again.
 /datum/status_effect/werewolf_frenzy/proc/refresh_lunge()
 	var/datum/action/cooldown/spell/lunge = owner.get_spell(/datum/action/cooldown/spell/lunge, TRUE)
-	lunge?.StartCooldownSelf(0)
+	// A zero cooldown can retrigger the spell, which may sleep; callers are signal handlers.
+	if(lunge)
+		INVOKE_ASYNC(lunge, TYPE_PROC_REF(/datum/action/cooldown, StartCooldownSelf), 0)
 
 /atom/movable/screen/alert/status_effect/buff/werewolf_frenzy
 	name = "Frenzy"

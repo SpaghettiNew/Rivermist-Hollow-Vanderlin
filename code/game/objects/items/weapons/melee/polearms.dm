@@ -347,6 +347,112 @@
 			if("onbelt")
 				return list("shrink" = 0.3,"sx" = -2,"sy" = -5,"nx" = 4,"ny" = -5,"wx" = 0,"wy" = -5,"ex" = 2,"ey" = -5,"nturn" = 0,"sturn" = 0,"wturn" = 0,"eturn" = 0,"nflip" = 0,"sflip" = 0,"wflip" = 0,"eflip" = 0,"northabove" = 0,"southabove" = 1,"eastabove" = 1,"westabove" = 0)
 
+//................ Town Watch Charm's Halberd ............... //
+
+
+
+/obj/item/weapon/polearm/halberd/watch_charm
+	item_weight = 3.5 KILOGRAMS
+	name = "Charm's Bardiche"
+	desc = "A grand axe of northernly design, renowned for easily chopping off limbs clean with brutal strength. This one has a watch crest on it. Wave it to boost morale of your fellow watch members."
+	icon_state = "charm_bardiche"
+	force = DAMAGE_SPEAR
+	force_wielded = DAMAGE_HALBERD_WIELD
+	wbalance = EASY_TO_DODGE
+	slowdown = 1
+	possible_item_intents = list(POLEARM_THRUST, POLEARM_BASH)
+	gripped_intents = list(POLEARM_THRUST, SPEAR_CUT, POLEARM_CHOP, POLEARM_BASH)
+	max_blade_int = 500
+	max_integrity = INTEGRITY_STRONGEST
+
+	slot_flags = ITEM_SLOT_BACK
+	drop_sound = 'sound/foley/dropsound/blade_drop.ogg'
+	dropshrink = 0.8
+	melting_material = /datum/material/steel
+	melt_amount = 150
+	sellprice = 90
+
+	actions_types = list(/datum/action/cooldown/watch_charm/halberd_flag)
+
+/datum/action/cooldown/watch_charm/halberd_flag
+	name = "Wave the Town Watch Banner"
+	desc = "Raise the halberd and rally nearby Town Watch."
+
+	check_flags = NONE
+	cooldown_time = 120 SECONDS
+
+	button_icon = 'icons/mob/actions/roguespells.dmi'
+	button_icon_state = "shieldsparkles"
+
+
+/datum/action/cooldown/watch_charm/halberd_flag/Activate(atom/target)
+	var/mob/living/user = owner
+	var/obj/item/weapon/polearm/halberd/watch_charm/halberd = src.target
+
+	if(!user || !halberd)
+		return FALSE
+
+	if(!halberd.can_wave_flag(user))
+		if(!user.is_holding(halberd))
+			to_chat(user, span_warning("I need to hold the halberd first."))
+		else if(!HAS_TRAIT(halberd, TRAIT_WIELDED))
+			to_chat(user, span_warning("I need to wield the halberd with both hands."))
+		return FALSE
+
+	var/rallied = 0
+
+	// The banner bearer is affected as well.
+	user.apply_status_effect(/datum/status_effect/buff/charm_wave, /datum/status_effect/buff/halberd_wave)
+	rallied++
+
+	// Faction/department is checked ONLY when distributing the buff.
+	for(var/mob/living/carbon/ally in view(4, user))
+		if(ally == user)
+			continue
+
+		if(ally.stat >= DEAD)
+			continue
+
+		if(!istype(ally, /mob/living/carbon/human))
+			continue
+
+		var/mob/living/carbon/human/human_ally = ally
+		if(!human_ally.is_town_watch_member())
+			continue
+
+		ally.apply_status_effect(/datum/status_effect/buff/charm_wave)
+		rallied++
+
+	// The actual waving period.
+	playsound(user, 'modular_rmh/sound/foley/footsteps/watch_halberd/flag_wave.ogg', 75, TRUE)
+
+	user.visible_message(span_notice("[user] raises the Town Watch banner and waves it."), span_notice("I raise the Town Watch banner and wave it."))
+
+	to_chat(user, span_notice("The banner rallies [rallied] Town Watch member[rallied == 1 ? "" : "s"]."))
+
+	// Slow the banner bearer while the banner is being waved.
+	var/wave_modifier = "watch_charm_flag_wave"
+	user.add_movespeed_modifier(wave_modifier, multiplicative_slowdown = 1)
+
+	addtimer(CALLBACK(user, TYPE_PROC_REF(/mob, remove_movespeed_modifier), wave_modifier ), 4 SECONDS)
+
+	// Start the 120 second cooldown after a successful wave.
+	StartCooldown()
+
+	return TRUE
+
+/obj/item/weapon/polearm/halberd/watch_charm/proc/can_wave_flag(mob/living/user)
+	if(!user)
+		return FALSE
+
+	if(!user.is_holding(src))
+		return FALSE
+
+	if(!HAS_TRAIT(src, TRAIT_WIELDED))
+		return FALSE
+
+	return TRUE
+
 //originally in the axes.dm file, moved here because they inherit from the bardiche
 //................ Woodcutter Axe ............... //
 /obj/item/weapon/polearm/halberd/bardiche/woodcutter

@@ -11,6 +11,7 @@
 	spawn_positions = 4
 	give_bank_account = 60
 	can_have_apprentices = FALSE
+	required_present_jobs = list(/datum/job/burgmeister, /datum/job/councilor)
 
 	allowed_ages = list(AGE_ADULT, AGE_MIDDLEAGED, AGE_OLD, AGE_IMMORTAL)
 	allowed_races = RACES_PLAYER_ALL
@@ -77,7 +78,7 @@
 	name = "Butler"
 	head = null
 	mask = null
-	neck = null
+	neck = /obj/item/clothing/neck/slave_collar/draining
 	cloak = null
 	armor = /obj/item/clothing/shirt/clothvest/colored/townhall
 	shirt = /obj/item/clothing/shirt/undershirt/formal
@@ -139,7 +140,7 @@
 	name = "Maid"
 	head = /obj/item/clothing/head/maidband
 	mask = null
-	neck = /obj/item/clothing/neck/slave_collar/female
+	neck = /obj/item/clothing/neck/slave_collar/draining/female
 	cloak = /obj/item/clothing/cloak/apron/maid
 	armor = null
 	shirt = /obj/item/clothing/shirt/dress/maid/servant
@@ -195,7 +196,7 @@
 	name = "Concubine"
 	head = null
 	mask = null
-	neck = /obj/item/clothing/neck/slave_collar/female
+	neck = /obj/item/clothing/neck/slave_collar/draining/female
 	cloak = null
 	armor = null
 	shirt = /obj/item/clothing/shirt/dress/maid/servant

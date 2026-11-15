@@ -14,13 +14,20 @@ import { bun, bunRoot } from './lib/bun';
 import { DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { downloadFile } from './lib/download';
 import { formatDeps } from './lib/helpers';
+import {
+  buildTguiInLocalMirror,
+  isNetworkPath,
+  preferMappedDrive,
+} from './lib/network_drive';
 import { prependDefines } from './lib/tgs';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
 export const DME_NAME = 'vanderlin';
 
+const launchDir = process.cwd();
 Juke.chdir('../..', import.meta.url);
+preferMappedDrive(launchDir);
 
 const dependencies: Record<string, string> = await Bun.file('dependencies.sh')
   .text()
@@ -273,7 +280,8 @@ export const TguiTarget = new Juke.Target({
     'tgui/public/tgui-say.bundle.css',
     'tgui/public/tgui-say.bundle.js',
   ],
-  executes: () => bun('tgui:build'),
+  executes: () =>
+    isNetworkPath('tgui') ? buildTguiInLocalMirror() : bun('tgui:build'),
 });
 
 export const TguiTscTarget = new Juke.Target({
@@ -373,7 +381,9 @@ export const TgsTarget = new Juke.Target({
   },
 });
 
-Juke.setup({ file: import.meta.url }).then((code) => {
+// Bun.main is the key of this entry module. On a UNC share, import.meta.url and .path
+// load a second copy, and Juke then rejects the targets of that copy.
+Juke.setup({ file: Bun.main }).then((code) => {
   // We're using the currently available quirk in Juke Build, which
   // prevents it from exiting on Windows, to wait on errors.
   if (code !== 0 && process.argv.includes('--wait-on-error')) {

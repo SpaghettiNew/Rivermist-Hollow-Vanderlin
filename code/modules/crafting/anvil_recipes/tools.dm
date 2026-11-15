@@ -335,6 +335,13 @@
 	created_item = /obj/item/weapon/chisel
 	craftdiff = 1
 
+/datum/anvil_recipe/tools/steel/steelchain
+	name = "3x Steel Chains"
+	recipe_name = "three lengths of Chain"
+	created_item = /obj/item/rope/chain/steel
+	createditem_extra = 2
+	craftdiff = 2
+
 // --------- SILVER -----------
 
 /datum/anvil_recipe/tools/silver
@@ -366,6 +373,12 @@
 	createditem_extra = 2
 	craftdiff = 3
 
+/datum/anvil_recipe/tools/silver/silverchain
+	name = "3x Silver Chains"
+	recipe_name = "three lengths of Chain"
+	created_item = /obj/item/rope/chain/silver
+	createditem_extra = 2
+	craftdiff = 3
 
 // --------- GOLD -----------
 
@@ -391,3 +404,10 @@
 	name = "2x Platters (gold)"
 	created_item = /obj/item/plate/gold
 	craftdiff = 2
+
+/datum/anvil_recipe/tools/gold/goldchain
+	name = "3x Gold Chains"
+	recipe_name = "three lengths of Chain"
+	created_item = /obj/item/rope/chain/gold
+	createditem_extra = 2
+	craftdiff = 3

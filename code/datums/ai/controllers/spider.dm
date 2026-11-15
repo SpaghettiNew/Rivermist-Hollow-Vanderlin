@@ -26,7 +26,7 @@
 	planning_subtrees = build_spider_subtrees()
 	return ..()
 
-/// The kind's lead, the shared habits, its attacks, melee, leaving cocoons, food, then its tail.
+/// The kind's lead, the shared habits, its attacks, melee, healing, leaving cocoons, food, then its tail.
 /datum/ai_controller/spider_base/proc/build_spider_subtrees()
 	var/list/subtrees = list()
 	if(lead_subtrees)
@@ -39,11 +39,12 @@
 		/datum/ai_planning_subtree/spider_brood,
 		/datum/ai_planning_subtree/find_cocoon_target,
 		/datum/ai_planning_subtree/cocoon_target,
-		/datum/ai_planning_subtree/simple_self_recovery,
 	)
 	if(attack_subtrees)
 		subtrees += attack_subtrees
 	subtrees += /datum/ai_planning_subtree/basic_melee_attack_subtree/agile
+	// After the fight, so a foe in reach always gets the melee first.
+	subtrees += /datum/ai_planning_subtree/simple_self_recovery
 	// Nothing better to do: walk away from an occupied cocoon before foraging.
 	subtrees += /datum/ai_planning_subtree/spider_disperse
 	subtrees += food_finder

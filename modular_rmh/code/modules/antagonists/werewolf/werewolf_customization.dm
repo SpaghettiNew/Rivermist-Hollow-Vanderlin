@@ -192,7 +192,7 @@
 		else
 			if(field in choice_fields)
 				var/list/options = get_options(field)
-				var/chosen = browser_input_list(user, "Choose your beast's [lowertext(choice_fields[field])].", "Werewolf Customization", options)
+				var/chosen = browser_input_list(user, "Choose your beast's [LOWER_TEXT(choice_fields[field])].", "Werewolf Customization", options)
 				if(chosen in options)
 					new_value = options[chosen]
 					changed = TRUE

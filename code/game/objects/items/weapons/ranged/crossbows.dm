@@ -13,6 +13,7 @@
 	randomspread = 1
 	spread = 0
 	can_parry = TRUE
+	trigger_guard = TRIGGER_GUARD_ALLOW_ALL
 	var/chargingspeed = 40
 	var/reloadtime = 40
 	var/movingreload = FALSE

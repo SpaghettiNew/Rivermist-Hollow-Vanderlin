@@ -10,11 +10,19 @@
 		to_chat(src, span_notice("Someone else is picking \the [P]."))
 		return FALSE
 
-	if(!P.can_be_picked())
+	if(!P.lock_check(TRUE))
 		to_chat(src, span_notice("I cannot lockpick \the [P]."))
 		return FALSE
 
 	var/datum/lock/key/KL = P.lock
+	if(KL.keyhole_obstructed)
+		to_chat(src, span_warning("The keyhole is obstructed by a broken fragment. I must remove it before lockpicking again."))
+		return FALSE
+
+	if(!P.can_be_picked())
+		to_chat(src, span_notice("I cannot lockpick \the [P]."))
+		return FALSE
+
 	if(!KL.locked)
 		to_chat(src, span_notice("\The [P] is unlocked."))
 		return FALSE
@@ -25,6 +33,7 @@
 		to_chat(src, span_notice("I need a knife in order to lockpick \the [P]."))
 		return FALSE
 
+	KL.record_lockpicking_attempt()
 	client.spawn_lockpicking_UI(P, src, L, the_wedge, difficulty, KL.get_string_difficulty(), GET_MOB_SKILL_VALUE_OLD(src, /datum/attribute/skill/misc/lockpicking))
 	visible_message(span_warning("[src] starts to pick the lock of \the [P]!"), span_notice("I start to pick the lock of \the [P]..."))
 	return TRUE
@@ -32,20 +41,29 @@
 //obj is told its picked, theoretically can be used for any objects
 /obj/proc/picked(mob/living/user, obj/lockpick_used, skill_level, difficulty)
 	finish_lockpicking(user)
+	var/datum/lock/key/key_lock
+	if(istype(lock, /datum/lock/key))
+		key_lock = lock
 
 	//difficulty goes from 1 to 6, hence 6 - difficulty
 	var/break_prob = clamp(60 - (skill_level * 10) + (6 - difficulty * 10), 0, 100)
 	if(prob(break_prob))
-		to_chat(user, span_notice("My \the [lockpick_used] broke!"))
+		var/pick_name = lockpick_used.name
 		playsound(src, 'sound/items/LPBreak.ogg', min(100 - (15 * skill_level) + (10 * 6 - difficulty), 100), extrarange = SILENCED_SOUND_EXTRARANGE)
 		lockpick_used.take_damage(10)
+		if(QDELETED(lockpick_used))
+			to_chat(user, span_warning("My \the [pick_name] snaps apart!"))
+			if(key_lock)
+				key_lock.handle_lockpick_broken(user)
+		else
+			to_chat(user, span_notice("My \the [pick_name] bends under the strain, but holds."))
 
 	if(user.client?.prefs.read_preference(/datum/preference/toggle/showrolls))
 		to_chat(user, span_notice("The chance to break was [break_prob]%!"))
 
-	if(lock)
-		lock.locked = FALSE
-		lock.tampered = TRUE
+	if(key_lock)
+		key_lock.last_picked_at = key_lock.get_lock_evidence_time()
+		key_lock.locked = FALSE
 
 	playsound(src, 'sound/items/LPWin.ogg', min(100 - (15 * skill_level) + (10 * 6 - difficulty), 100), extrarange = SILENCED_SOUND_EXTRARANGE)
 
@@ -69,7 +87,7 @@
 	if(!lock_check(TRUE))
 		return FALSE
 	var/datum/lock/key/KL = lock
-	return KL.pickable
+	return KL.pickable && !KL.keyhole_obstructed
 
 //ui is spawned, users screen is updated
 /client/proc/spawn_lockpicking_UI(obj/lock, mob/living/user, obj/lockpick, obj/wedge, difficulty, shown_d, skill_level) //potentially different sprites for locks and picks, put here
@@ -312,15 +330,23 @@
 		if(break_checking_cooldown <= world.time)
 			var/break_prob = clamp(10 - skill_level + (6 - difficulty) * 2, 0, 100)
 			if(prob(break_prob))
-				to_chat(picker, span_notice("My \the [the_lockpick] broke!"))
+				var/obj/item/lockpick_before_break = the_lockpick
+				var/pick_name = lockpick_before_break.name
 				playsound(src, 'sound/items/LPBreak.ogg', min(100 - (15 * skill_level) + (10 * 6 - difficulty), 100), extrarange = SILENCED_SOUND_EXTRARANGE)
-				the_lockpick.take_damage(10)
-				//one tenth of the usual boost for picking a lock
+				lockpick_before_break.take_damage(10)
+				//one tenth of the usual boost for picking a lock; retain it even if this damage destroys the pick.
 				if(isliving(picker))
 					var/mob/living/picker_real = picker
 					var/amt2raise = ((GET_MOB_ATTRIBUTE_VALUE(picker_real, STAT_INTELLIGENCE) / 2) * (20 / difficulty)) / 10
 					var/boon = picker_real.get_learning_boon(/datum/attribute/skill/misc/lockpicking)
 					picker_real.adjust_experience(/datum/attribute/skill/misc/lockpicking, amt2raise * boon)
+				if(QDELETED(lockpick_before_break))
+					to_chat(picker, span_warning("My \the [pick_name] snaps apart!"))
+					var/datum/lock/key/key_lock = picking_object?.lock
+					key_lock?.handle_lockpick_broken(picker)
+					close_lockpick()
+					return FALSE
+				to_chat(picker, span_notice("My \the [pick_name] bends under the strain, but holds."))
 			if(picker.client?.prefs.read_preference(/datum/preference/toggle/showrolls))
 				to_chat(picker, span_notice("The chance to break was [break_prob]%!"))
 			break_checking_cooldown = world.time + (9 - (7 - difficulty)) SECONDS

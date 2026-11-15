@@ -148,6 +148,11 @@
 
 
 /mob/living/carbon/proc/throw_mode_off()
+	// --- PATCH START ---
+	var/obj/item/rope/net/bola/B = get_active_held_item()
+	if(istype(B))
+		B.cancel_windup()
+	// --- PATCH END ---
 	in_throw_mode = 0
 	if(client && hud_used)
 		hud_used.throw_icon?.throwy = 0
@@ -156,6 +161,9 @@
 
 /mob/living/carbon/proc/throw_mode_on()
 	in_throw_mode = 1
+	var/obj/item/rope/net/bola/B = get_active_held_item()
+	if(istype(B))
+		B.start_windup(src)
 	if(client && hud_used)
 		hud_used.throw_icon?.throwy = 1
 		hud_used.throw_icon?.update_appearance(UPDATE_ICON_STATE)
@@ -165,6 +173,25 @@
 
 /mob/living/carbon/throw_item(atom/target, offhand = FALSE)
 	. = ..()
+
+	var/obj/item/rope/net/bola/B
+	var/obj/item/charged_item = offhand ? get_inactive_held_item() : get_active_held_item()
+	if(istype(charged_item, /obj/item/rope/net/bola))
+		B = charged_item
+
+	var/list/bola_throw_stats
+	if(target && isturf(loc) && !istype(target, /atom/movable/screen) && in_throw_mode && !offhand && B)
+		if(!B.windup_active || B.windup_user != src)
+			B.start_windup(src)
+			to_chat(src, span_notice("I need to wind up [B] for at least one second before throwing it."))
+			return
+		if(world.time - B.windup_started_at < B.minimum_windup_time)
+			to_chat(src, span_notice("I need to wind up [B] for at least one second before throwing it."))
+			return
+		bola_throw_stats = B.finish_windup(src)
+		if(!bola_throw_stats)
+			return
+
 	throw_mode_off()
 	if(!target || !isturf(loc))
 		return
@@ -226,8 +253,6 @@
 			if(ismobholder(thrown_thing))
 				var/obj/item/mob_holder/old = thrown_thing
 				var/mob/living/curled_up = old.held_mob
-				// A holder that can't let go (empty, or sealed in a body cavity) must not be
-				// swapped out for its occupant, or we throw a mob that is still inside something.
 				if(!curled_up || !old.release())
 					return
 				thrown_thing = curled_up
@@ -247,16 +272,24 @@
 			thrown_speed = thrown_thing.throw_speed
 		if(!thrown_range)
 			thrown_range = thrown_thing.throw_range
-		visible_message("<span class='danger'>[src] throws [thrown_thing].</span>", \
-						"<span class='danger'>I toss [thrown_thing].</span>")
-		log_message("has thrown [thrown_thing]", LOG_ATTACK)
-		var/atom/throw_start_loc = thrown_thing.loc
-		var/throw_started = thrown_thing.safe_throw_at(end_T, thrown_range, thrown_speed, src, null, null, null, move_force)
-		if(!QDELETED(thrown_thing) && (throw_started || thrown_thing.throwing || thrown_thing.loc != throw_start_loc))
-			SEND_SIGNAL(src, COMSIG_MOB_THROW, thrown_thing)
-		if(!used_sound)
-			used_sound = pick(PUNCHWOOSH)
-		playsound(src, used_sound, 60, FALSE)
+
+		if(thrown_thing == B && bola_throw_stats)
+			thrown_range = bola_throw_stats["range"]
+			thrown_speed = bola_throw_stats["speed"]
+
+		// Dedicated sound for bola throws.
+		if(istype(thrown_thing, /obj/item/rope/net/bola))
+			var/obj/item/rope/net/bola/thrown_bola = thrown_thing
+			if(thrown_bola.bola_throw_sound)
+				playsound(src, thrown_bola.bola_throw_sound, 50, TRUE)
+
+		// Preserve the existing sound handling for other throwable items.
+		if(used_sound)
+			playsound(src.loc, used_sound, 50, TRUE, -1)
+
+		thrown_thing.throw_at(target, thrown_range, thrown_speed, src, spin = TRUE)
+
+
 
 /mob/living/carbon/proc/canBeHandcuffed()
 	return 0
@@ -370,6 +403,15 @@
 		remove_status_effect(/datum/status_effect/leash_pet)
 	return
 
+///helper for the sound feedback
+/mob/living/carbon/proc/play_rope_untie_sound(obj/item/I)
+	if(!istype(I, /obj/item/rope))
+		return
+
+	var/obj/item/rope/R = I
+	if(R.untie_sound)
+		playsound(src, R.untie_sound, 50, TRUE)
+
 /mob/living/carbon/resist_restraints(instant = FALSE)
 	var/obj/item/I = null
 	var/type = 0
@@ -387,7 +429,6 @@
 			changeNext_move(CLICK_CD_RANGE)
 			last_special = world.time + CLICK_CD_RANGE
 		cuff_resist(I, instant = instant)
-
 
 /mob/living/carbon/proc/cuff_resist(obj/item/I, breakouttime = 1 MINUTES, cuff_break = 0, instant = FALSE)
 	if(is_docile_restraint(I))
@@ -410,6 +451,7 @@
 	last_restraint_struggle = world.time
 	if(!cuff_break)
 		to_chat(src, span_notice("I try to get out of \the [I]\s..."))
+		play_rope_untie_sound(I)
 		if(do_after(src, breakouttime, timed_action_flags = (IGNORE_HELD_ITEM)))
 			clear_cuffs(I, cuff_break)
 		else
@@ -417,6 +459,7 @@
 
 	else if(cuff_break == FAST_CUFFBREAK)
 		to_chat(src, span_notice("I attempt to break \the [I]\s..."))
+		play_rope_untie_sound(I)
 		if(do_after(src, breakouttime, timed_action_flags = (IGNORE_HELD_ITEM)))
 			clear_cuffs(I, cuff_break)
 		else

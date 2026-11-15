@@ -100,6 +100,9 @@
 	if(client)
 		client.preload_music()
 
+	if(mind)
+		SStreasury.deliver_pending_payroll_notifications(mind)
+
 /mob/proc/send_pref_messages()
 	if(client?.prefs)
 		for(var/message in client.prefs.preference_message_list)

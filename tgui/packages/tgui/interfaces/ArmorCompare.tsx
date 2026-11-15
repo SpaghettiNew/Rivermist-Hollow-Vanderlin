@@ -90,23 +90,7 @@ export const ArmorCompare = (props) => {
 
   const lowerSearch = (search || '').toLowerCase();
 
-  const handleSearchInput = (a: any, b: any) => {
-    if (typeof b === 'string') {
-      setSearch(b);
-      return;
-    }
-    if (typeof a === 'string') {
-      setSearch(a);
-      return;
-    }
-    if (a?.target && typeof a.target.value === 'string') {
-      setSearch(a.target.value);
-      return;
-    }
-    if (typeof a?.value === 'string') {
-      setSearch(a.value);
-    }
-  };
+  const handleSearchInput = (value: string) => setSearch(value);
 
   const armorMatchesUsage = (armor: ArmorEntry) => {
     if (!usageBuilt || !lowerSearch) return false;
@@ -301,7 +285,7 @@ export const ArmorCompare = (props) => {
                 : 'Search by type... (scan item usage to also search by item)'
             }
             value={search}
-            onInput={handleSearchInput}
+            onChange={handleSearchInput}
             mb={1}
           />
           <Table>

@@ -4,11 +4,10 @@ import {
   Button,
   Input,
   NumberInput,
-  Stack,
   Tooltip,
 } from 'tgui-core/components';
 import { Window } from '../layouts';
-import { TutorialOverlay, TutorialStep, PP } from '../interfaces/_common/TutorialOverlay';
+import { TutorialOverlay, type TutorialStep, PP } from '../interfaces/_common/TutorialOverlay';
 
 type Attribute = {
   name: string;
@@ -109,6 +108,8 @@ const EntryRow = (props: {
           letterSpacing: '0.05em', marginBottom: '1px' }}>BONUS</Box>
         <NumberInput
           value={bonus}
+          minValue={-Infinity}
+          maxValue={Infinity}
           step={1}
           onChange={(val: number) =>
             act('change_attribute', { attribute_type: type, new_value: val })
@@ -236,7 +237,11 @@ const GlobalsTable = (props: {
         }}>
           <td style={{ padding: '5px 10px', color: PP.text }}>{label}</td>
           <td style={{ padding: '3px 4px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-            <NumberInput value={value ?? 0} step={1}
+            <NumberInput
+              value={value ?? 0}
+              minValue={-Infinity}
+              maxValue={Infinity}
+              step={1}
               onChange={(val: number) =>
                 varName === 'diceroll'
                   ? props.act('change_diceroll_modifier', { new_value: val })
@@ -286,8 +291,8 @@ const SectionBar = (props: { title: string; count?: number; right?: React.ReactN
   </Box>
 );
 
-export const AttributeEditor = (props: object, context: object) => {
-  const { act, data } = useBackend<AttributeEditorData>(context);
+export const AttributeEditor = () => {
+  const { act, data } = useBackend<AttributeEditorData>();
   const {
     parent,
     attribute_min = 0, attribute_max = 0, attribute_default = 0,
@@ -413,7 +418,7 @@ export const AttributeEditor = (props: object, context: object) => {
                   <Input
                     placeholder="Search..."
                     value={skillSearch}
-                    onInput={(e) => setSkillSearch(e.target.value)}
+                    onChange={(value: string) => setSkillSearch(value)}
                     style={{ width: '120px', fontSize: '90%' }}
                   />
                 }

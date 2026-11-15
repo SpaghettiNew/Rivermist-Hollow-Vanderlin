@@ -382,45 +382,14 @@
 		pain_amt = 0
 		orgasm_prog_amt = 0
 
-	var/sexhealrand = rand(0.2, 0.4)
-	//go go gadget sex healing.. magic?
-	/*if(user.buckled?.sleepy) //gooder healing in bed
-		sexhealrand *= 4
-	if(!issimple(parent)||!issimple(target))
-		if(parent.health < user.maxHealth) //so its not spammy
-			if(parent.patron.type == /datum/patron/divine/eora)
-				var/sexhealmult = parent.mind.get_skill_level(/datum/skill/magic/holy)
-				if(sexhealmult < 2) //so its never below 2 for ones with trait.
-					sexhealmult = 2
-				sexhealrand *= sexhealmult
-				//heals target unless user zaping.
-				if(!user.cmode)
-					if(!issimple(target))
-						target.adjustBruteLoss(-sexhealrand)
-						target.adjustFireLoss(-sexhealrand/2)
-				if(prob(4))
-					to_chat(user, span_green("I feel Viiritri's miracle upon me."))
-					sexhealrand *= 2*/
-
+	// Two-argument rand() rounds to whole numbers, so scale an integer roll.
+	var/sexhealrand = rand(2, 4) * 0.1
+	// Holy partners heal more through the Blessed Union spell.
 	if(!user.cmode && prob(1)) //surprise heal burst at 1% chance
 		to_chat(user, span_greentextbig("I suddenly feel much better thanks to this act..."))
 		sexhealrand *= 5
 	user.heal_wounds(sexhealrand)
 	user.heal_overall_damage(sexhealrand, sexhealrand/2, updating_health = TRUE)
-
-	//grant devotion through sex because who needs praying.
-	//not sure if it works right but i dont need to test cuz its asked to be commented out anyway, ffs.
-	/*if(!issimple(user))
-		var/mob/living/carbon/human/devouser = user
-		var/datum/devotion/C = devouser.patron?.devotion_holder
-		if(devouser && C?.devotion)
-			if(devouser.get_skill_level(/datum/skill/magic/holy))
-				if(C.devotion < C.max_devotion)
-					C.update_devotion(rand(1,2))
-					if(devouser.patron.type == /datum/patron/divine/eora)
-						C.update_devotion(rand(4,8))
-						if(prob(3))
-							to_chat(devouser, span_info("I feel Viiritri guide me."))*/
 
 	var/isnymph = FALSE
 	if(HAS_TRAIT(user, TRAIT_NYMPHO_CURSE) || user.has_quirk(/datum/quirk/negative/addiction/lovefiend))

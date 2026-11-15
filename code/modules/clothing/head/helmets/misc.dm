@@ -57,6 +57,7 @@
 	body_parts_covered = COVERAGE_NASAL
 	max_integrity = ARMOR_INT_HELMET_STEEL
 	item_weight = 3.12 KILOGRAMS
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:warden" = 5, "elite:town_watch" = 3)
 
 //................ Skull Cap ............... //
 /obj/item/clothing/head/helmet/skullcap
@@ -448,6 +449,7 @@
 	mob_overlay_icon = 'icons/roguetown/clothing/special/onmob/captain.dmi'
 	icon_state = "capbarbute"
 	item_weight = 4.45 KILOGRAMS
+	social_cues = list("faction:town_watch" = 10, "rank:town_watch:captain" = 5, "elite:town_watch" = 3)
 
 //................. Town Watch Helmet .............. //
 /obj/item/clothing/head/helmet/townwatch
@@ -465,6 +467,7 @@
 	melt_amount = 100
 	sellprice = VALUE_IRON_ARMOR_UNUSUAL
 	item_weight = 3.2 KILOGRAMS
+	social_cues = list("faction:town_watch" = 7, "elite:town_watch" = 3)
 
 /obj/item/clothing/head/helmet/townwatch/alt
 	icon_state = "gatehelm"
@@ -476,6 +479,7 @@
 	icon = 'icons/roguetown/clothing/special/gatemaster.dmi'
 	mob_overlay_icon = 'icons/roguetown/clothing/special/onmob/gatemaster.dmi'
 	icon_state = "master_helm"
+	social_cues = list("faction:town_watch" = 7, "elite:town_watch" = 3)
 
 /obj/item/clothing/head/helmet/townbarbute
 	name = "town watchman barbute"
@@ -496,6 +500,7 @@
 	detail_color = CLOTHING_PLUM_PURPLE
 	uses_lord_coloring = LORD_PRIMARY
 	misc_flags = CRAFTING_TEST_EXCLUDE
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:veteran" = 5, "elite:town_watch" = 3)
 
 /obj/item/clothing/head/helmet/sargebarbute
 	name = "elegant barbute"
@@ -516,6 +521,7 @@
 	detail_color = CLOTHING_PLUM_PURPLE
 	uses_lord_coloring = LORD_PRIMARY
 	misc_flags = CRAFTING_TEST_EXCLUDE
+	social_cues = list("faction:town_watch" = 7, "elite:town_watch" = 8)
 
 /obj/item/clothing/head/helmet/kettle/slit/atarms
 	name = "royal slitted kettle"
@@ -532,6 +538,7 @@
 	detail_color = CLOTHING_PLUM_PURPLE
 	uses_lord_coloring = LORD_PRIMARY
 	misc_flags = CRAFTING_TEST_EXCLUDE
+	social_cues = list("faction:town_watch" = 1, "elite:town_watch" = 8)
 
 //................. Zizo Barbute .............. //
 

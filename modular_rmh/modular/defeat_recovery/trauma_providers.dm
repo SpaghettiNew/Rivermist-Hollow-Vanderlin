@@ -36,11 +36,15 @@
 /obj/structure/defeat_trauma_shrine
 	name = "shrine of solace"
 	desc = "A small shrine for soothing one defeat aftermath at a time. Without Novice Miracles or holy devotion, treatment takes twice as long. Spiritual aftermath costs one to three silver coins by severity; physical aftermath costs and takes twice as long. Click it to diagnose a patient beside it, or offer silver to begin a rite."
-	icon = 'icons/roguetown/misc/structure.dmi'
-	icon_state = "elfs"
+	icon = 'modular_rmh/icons/obj/structures/statues/shrine_of_solace.dmi'
+	icon_state = "statue"
+	pixel_x = -16
+	base_pixel_x = -16
 	density = TRUE
 	anchored = TRUE
 	var/datum/defeat_trauma_provider/shrine/structure/treatment_provider
+	/// Seven one-decisecond frames of the "effect" state: one full play.
+	var/activation_duration = 0.7 SECONDS
 
 /obj/structure/defeat_trauma_shrine/Initialize(mapload)
 	. = ..()
@@ -62,6 +66,15 @@
 		return ..()
 	treatment_provider.station_interact(user, offering)
 	return TRUE
+
+/// Plays the "effect" overlay once over the statue.
+/obj/structure/defeat_trauma_shrine/proc/play_activation()
+	flick_overlay_view(mutable_appearance(icon, "effect"), activation_duration)
+
+/datum/defeat_trauma_provider/shrine/structure/on_treatment_complete(mob/living/patient, mob/living/helper)
+	var/obj/structure/defeat_trauma_shrine/shrine = resolve_host()
+	if(istype(shrine))
+		shrine.play_activation()
 
 /// Both providers are ordinary blueprint constructions and therefore appear in the existing globally
 /// reachable construction browser. They require no map placement or special roundstart grant.

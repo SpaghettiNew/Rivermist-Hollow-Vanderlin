@@ -24,6 +24,7 @@
 	cartridge_wording = "arrow"
 	load_sound = 'sound/foley/nockarrow.ogg'
 	metalizer_result = /obj/item/restraints/legcuffs/beartrap/armed
+	trigger_guard = TRIGGER_GUARD_ALLOW_ALL
 
 /obj/item/gun/ballistic/revolver/grenadelauncher/bow/getonmobprop(tag)
 	if(tag)

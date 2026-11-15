@@ -1456,7 +1456,9 @@ GLOBAL_LIST_EMPTY(roundstart_species)
 	if(!I.equip_delay_self || bypass_equip_delay_self)
 		return TRUE
 	if(HAS_TRAIT(H, TRAIT_CHUNKYFINGERS))
-		return do_after(H, 5 MINUTES)
+		return do_after(H, 0.5 SECONDS)
+	if(HAS_TRAIT(H, TRAIT_ROTFINGERS))
+		return do_after(H, 10 MINUTES)
 	var/doafter_flags = I.edelay_type ? (IGNORE_USER_LOC_CHANGE) : (NONE)
 	return do_after(H, min((I.equip_delay_self - GET_MOB_ATTRIBUTE_VALUE(H, STAT_SPEED)), 1), timed_action_flags = doafter_flags)
 

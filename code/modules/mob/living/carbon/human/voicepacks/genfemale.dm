@@ -7,6 +7,8 @@
 			used = getfsilenced(soundin)
 	if(!used)
 		switch(soundin)
+			if("attack")
+				used = list('sound/vo/female/gen/attack (1).ogg','sound/vo/female/gen/attack (2).ogg','sound/vo/female/gen/attack (3).ogg')
 			if("deathgurgle")
 				used = pick('sound/vo/female/gen/deathgurgle (1).ogg','sound/vo/female/gen/deathgurgle (2).ogg','sound/vo/female/gen/deathgurgle (3).ogg')
 			if("agony")
@@ -43,6 +45,8 @@
 				used = list('sound/vo/female/gen/groan (1).ogg','sound/vo/female/gen/groan (2).ogg','sound/vo/female/gen/groan (3).ogg','sound/vo/female/gen/groan (4).ogg','sound/vo/female/gen/groan (5).ogg')
 			if("grumble")
 				used = 'sound/vo/female/gen/grumble.ogg'
+			if("gogogo")
+				used = list('sound/vo/female/gen/gogogo (1).ogg','sound/vo/female/gen/gogogo (2).ogg','sound/vo/female/gen/gogogo (3).ogg')
 			if("haltyell")
 				used = list('sound/vo/female/gen/haltyell (1).ogg','sound/vo/female/gen/haltyell (2).ogg')
 			if("haltyellorphan")
@@ -53,6 +57,8 @@
 				used = list('sound/vo/female/gen/huh (1).ogg','sound/vo/female/gen/huh (2).ogg','sound/vo/female/gen/huh (3).ogg')
 			if("hum")
 				used = list('sound/vo/female/gen/hum (1).ogg','sound/vo/female/gen/hum (2).ogg','sound/vo/female/gen/hum (3).ogg')
+			if("holdposition")
+				used = list('sound/vo/female/gen/holdposition (1).ogg','sound/vo/female/gen/holdposition (2).ogg','sound/vo/female/gen/holdposition (3).ogg')
 			if("jump")
 				used = 'sound/vo/female/gen/jump.ogg'
 			if("leap")

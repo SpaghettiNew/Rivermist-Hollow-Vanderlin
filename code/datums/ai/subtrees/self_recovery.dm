@@ -1,4 +1,4 @@
-/// When no target and wounds, slowly cure bleeding and damage.
+/// Out of combat with wounds, slowly cure bleeding and damage.
 /datum/ai_planning_subtree/simple_self_recovery
 	var/datum/ai_behavior/behavior = /datum/ai_behavior/simple_rest_and_recuperate
 	var/heal_message = "'s wounds begin to knit and mend."
@@ -16,6 +16,9 @@
 	//Already doing something or don't need healing
 	//And not in some enviro that will tick damage
 	if((pawn.doing()) || (pawn.get_bleed_rate() == 0) || (pawn.getBruteLoss() == 0) || (!cur_turf.can_traverse_safely(pawn)))
+		return
+	// Fight or flee first; heal only once nobody is on us.
+	if(controller.is_in_combat())
 		return
 	controller.queue_behavior(behavior, heal_message, bleed_clot, brute_heal)
 

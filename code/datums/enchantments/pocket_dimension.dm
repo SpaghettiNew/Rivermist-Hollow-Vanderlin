@@ -1,3 +1,5 @@
+// Disabled: made any storage a bag of holding. Keep the bag of holding unique.
+/*
 /datum/enchantment/pocket_dimension
 	enchantment_name = "Pocket Dimension"
 	examine_text = "A stable fold in space yawns beyond this container."
@@ -48,3 +50,4 @@
 	if(added.GetComponent(/datum/component/pocket_access))
 		return
 	pocket_access.store_movable_for_user(null, added, get_turf(source))
+*/

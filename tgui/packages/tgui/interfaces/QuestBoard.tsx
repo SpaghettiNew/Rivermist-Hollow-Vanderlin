@@ -104,7 +104,7 @@ const STRINGS = {
   },
 } as const;
 
-type Locale = (typeof STRINGS)['en'];
+type Locale = (typeof STRINGS)[keyof typeof STRINGS];
 
 type TaskForm = {
   title: string;
@@ -138,7 +138,7 @@ const NoticeForm = (props: {
             maxLength={props.limits.title}
             placeholder={props.t.fieldTitle}
             value={form.title}
-            onInput={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            onChange={(value) => setForm((f) => ({ ...f, title: value }))}
           />
         </Stack.Item>
         <Stack.Item>
@@ -157,7 +157,7 @@ const NoticeForm = (props: {
             maxLength={props.limits.payment}
             placeholder={props.t.fieldPayment}
             value={form.payment}
-            onInput={(e) => setForm((f) => ({ ...f, payment: e.target.value }))}
+            onChange={(value) => setForm((f) => ({ ...f, payment: value }))}
           />
         </Stack.Item>
         <Stack.Item>
@@ -465,23 +465,23 @@ export const QuestBoard = () => {
 
           <div className="QuestBoard__Footer">
             <Stack className="QuestBoard__Roster" wrap>
-              <Stack.Item
-                className="QuestBoard__RosterItem"
-                tooltip={
-                  data.leader_name
-                    ? `${data.leader_label} currently on duty.`
-                    : `No one is currently serving as ${data.leader_label.toLowerCase()}.`
-                }
-              >
-                <b>{data.leader_label}:</b> {data.leader_name || 'Away'}
+              <Stack.Item className="QuestBoard__RosterItem">
+                <span
+                  title={
+                    data.leader_name
+                      ? `${data.leader_label} currently on duty.`
+                      : `No one is currently serving as ${data.leader_label.toLowerCase()}.`
+                  }
+                >
+                  <b>{data.leader_label}:</b> {data.leader_name || 'Away'}
+                </span>
               </Stack.Item>
               {!!data.staff_label && (
-                <Stack.Item
-                  className="QuestBoard__RosterItem"
-                  tooltip={`On-duty ${data.staff_label.toLowerCase()}, if any.`}
-                >
-                  <b>{data.staff_label}:</b>{' '}
-                  {data.staff_names.length ? data.staff_names.join(', ') : 'None on duty'}
+                <Stack.Item className="QuestBoard__RosterItem">
+                  <span title={`On-duty ${data.staff_label.toLowerCase()}, if any.`}>
+                    <b>{data.staff_label}:</b>{' '}
+                    {data.staff_names.length ? data.staff_names.join(', ') : 'None on duty'}
+                  </span>
                 </Stack.Item>
               )}
             </Stack>

@@ -351,7 +351,12 @@
 		return FALSE
 	qdel(target)
 	SEND_SIGNAL(patient, COMSIG_LIVING_DEFEAT_TREATED, helper, treatment_type)
+	on_treatment_complete(patient, helper)
 	return TRUE
+
+/// Called once after a successful treatment. Hosts override it for feedback such as visuals.
+/datum/defeat_trauma_provider/proc/on_treatment_complete(mob/living/patient, mob/living/helper)
+	return
 
 /// Station click flow: pick an adjacent patient, report every trauma they carry (with the exact unmet
 /// requirement for blocked ones), then treat the chosen one. offering is the active-hand item, if any;

@@ -346,6 +346,7 @@ have ways of interacting with a specific atom and control it. They posses a blac
 	SIGNAL_HANDLER
 	if(attacker == pawn || QDELETED(attacker))
 		return
+	set_blackboard_key(BB_LAST_ATTACKED_AT, world.time)
 	enter_alert_mode(AI_ALERT_ON_ATTACK_TIME)
 	if(ai_status == AI_STATUS_IDLE)
 		set_ai_status(AI_STATUS_ON)
@@ -528,6 +529,20 @@ have ways of interacting with a specific atom and control it. They posses a blac
 		return FALSE
 	var/reach = blackboard[BB_AGGRO_MAINTAIN_RANGE] || max_target_distance
 	return max(abs(our_turf.x - their_turf.x), abs(our_turf.y - their_turf.y)) <= reach
+
+/// TRUE while a live target is in reach, or for calm_time after the pawn was last hit.
+/datum/ai_controller/proc/is_in_combat(calm_time = AI_COMBAT_CALM_TIME)
+	var/last_hit = blackboard[BB_LAST_ATTACKED_AT]
+	if(!isnull(last_hit) && world.time < last_hit + calm_time)
+		return TRUE
+	var/atom/target = blackboard[BB_BASIC_MOB_CURRENT_TARGET]
+	if(QDELETED(target))
+		return FALSE
+	if(isliving(target))
+		var/mob/living/living_target = target
+		if(living_target.stat == DEAD)
+			return FALSE
+	return is_threat_in_reach(target)
 
 /// Generates a plan and see if our existing one is still valid.
 /datum/ai_controller/process(delta_time)

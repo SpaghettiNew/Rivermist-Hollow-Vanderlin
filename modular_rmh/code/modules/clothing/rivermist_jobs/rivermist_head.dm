@@ -11,20 +11,25 @@
 /obj/item/clothing/head/helmet/sargebarbute/town_watch
 	name = "captain barbute"
 	misc_flags = CRAFTING_TEST_EXCLUDE
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:captain" = 5)
 
 /obj/item/clothing/head/helmet/kettle/slit/atarms/town_watch
 	name = "sergeant kettle"
 	desc = "A lightweight steel helmet decorated for the sergeant of the town watch."
 	misc_flags = CRAFTING_TEST_EXCLUDE
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:sergant" = 5)
 
 /obj/item/clothing/head/helmet/townwatch/town_warden
 	name = "warden helmet"
 	desc = "An old archaic helmet of a symbol long forgotten, now owned by the Warden. The shape resembles the bars of a prison."
 	icon_state = "gatehelm"
 	misc_flags = CRAFTING_TEST_EXCLUDE
+	melt_amount = 75
+	melting_material = /datum/material/steel
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:warden" = 5)
 
 /obj/item/clothing/head/helmet/townwatch/gatemaster/bulwark
-	name = "town watch bulwark helmet"
+	name = "Veteran's watch helmet"
 	flags_inv = HIDEEARS|HIDEHAIR
 	desc = "An old archaic helmet of a symbol long forgotten, now owned by the Town Watch Bulwarks. The shape resembles the bars of a gate."
 	icon = 'icons/roguetown/clothing/special/gatemaster.dmi'
@@ -42,6 +47,7 @@
 	prevent_crits = ALL_CRITICAL_HITS
 	item_weight = 6 KILOGRAMS
 	misc_flags = CRAFTING_TEST_EXCLUDE
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:veteran" = 5, "elite:town_watch" = 3)
 
 /obj/item/clothing/head/crown/circlet/silverdiadem/moon_priest
 	name = "silver diadem"

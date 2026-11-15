@@ -119,6 +119,8 @@ GLOBAL_LIST_INIT(reverse_slave_phrases_translations, list(
 	var/mob/living/carbon/human/bearer
 	/// Stable key used in GLOB.slave_collars.
 	var/list_name
+	/// The rate at which the collar slowly drains the wearer's mana while equipped.
+	var/mana_drain_per_second = 0
 	COOLDOWN_DECLARE(collar_phrase_usage)
 
 /obj/item/clothing/neck/slave_collar/male
@@ -135,6 +137,34 @@ GLOBAL_LIST_INIT(reverse_slave_phrases_translations, list(
 	desc = "An elegant black choker with faint arcane patterns along its trim. Beautiful, yet deeply symbolic."
 	icon_state = "f_collar"
 	item_state = "collar_f"
+
+/obj/item/clothing/neck/slave_collar/draining
+	name = "Mana draining slave collar"
+	icon = 'modular_rmh/icons/clothing/neck.dmi'
+	desc = "A sturdy leather collar with ominous arcane engravings."
+	icon_state = "draincollar"
+	item_state = "draincollar_m"
+	smeltresult = /obj/item/ingot/iron
+	melting_material = /datum/material/iron
+	melt_amount = 100
+	anvilrepair = /datum/attribute/skill/craft/armor_repair
+	max_integrity = 150
+	resistance_flags = FIRE_PROOF
+	slot_flags = ITEM_SLOT_NECK
+	body_parts_covered = NECK
+	prevent_crits = list(BCLASS_CUT, BCLASS_STAB, BCLASS_CHOP, BCLASS_BLUNT, BCLASS_TWIST)
+	blocksound = PLATEHIT
+	flags_1 = HEAR_1
+	leashable = TRUE
+	mana_drain_per_second = 3
+
+/obj/item/clothing/neck/slave_collar/draining/female
+	name = "Elegant mana draining slave collar"
+	icon = 'modular_rmh/icons/clothing/neck.dmi'
+	desc = "An elegant black choker with faint arcane patterns along its trim. Beautiful, yet deeply symbolic."
+	icon_state = "draincollar_elegant"
+	item_state = "draincollar_f"
+	mana_drain_per_second = 3
 
 /obj/item/clothing/neck/slave_collar/New()
 	. = ..()
@@ -161,6 +191,7 @@ GLOBAL_LIST_INIT(reverse_slave_phrases_translations, list(
 	GLOB.slave_collars[list_name] = WEAKREF(src)
 	bearer = wearer
 	apply_collar_traits(wearer)
+	START_PROCESSING(SSobj, src)
 
 /obj/item/clothing/neck/slave_collar/dropped(mob/user)
 	. = ..()
@@ -183,7 +214,26 @@ GLOBAL_LIST_INIT(reverse_slave_phrases_translations, list(
 		REMOVE_TRAIT(bearer, TRAIT_MUTE, "slave_collar")
 		silenced = FALSE
 	remove_collar_traits(bearer)
+	STOP_PROCESSING(SSobj, src)
 	bearer = null
+
+/obj/item/clothing/neck/slave_collar/process(delta_time)
+	if(!bearer || QDELETED(bearer) || bearer != get_worn_bearer())
+		STOP_PROCESSING(SSobj, src)
+		return
+	if(!bearer.mana_pool)
+		STOP_PROCESSING(SSobj, src)
+		return
+	if(bearer.mana_pool.amount <= 0)
+		return
+	var/drain_amount = mana_drain_per_second * delta_time
+	if(drain_amount <= 0)
+		STOP_PROCESSING(SSobj, src)
+		return
+	bearer.mana_pool.adjust_mana(-drain_amount)
+	// Keep processing active while empty so mana regeneration does not disable draining permanently.
+	if(bearer.mana_pool.amount <= 0)
+		return
 
 /obj/item/clothing/neck/slave_collar/proc/apply_collar_traits(mob/living/carbon/human/wearer)
 	ADD_TRAIT(wearer, TRAIT_ANTIMAGIC, "slave_collar")

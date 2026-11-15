@@ -4,9 +4,10 @@
  * @license MIT
  */
 
-import { useSelector } from '../backend';
+import { useAtomValue } from 'jotai';
+import { backendStateAtom } from '../events/store';
 import { selectDebug } from './selectors';
 
 export function useDebug() {
-  return useSelector(selectDebug);
+  return selectDebug(useAtomValue(backendStateAtom));
 }

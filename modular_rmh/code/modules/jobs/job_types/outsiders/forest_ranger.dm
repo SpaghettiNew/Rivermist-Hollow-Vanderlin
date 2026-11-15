@@ -15,6 +15,7 @@
 	selection_color = JCOLOR_OUTSIDERS
 	advclass_cat_rolls = list(CAT_FOREST_RANGER = 20)
 	give_bank_account = 30
+	daily_salary = 10
 	job_bitflag = BITFLAG_GARRISON
 
 	exp_type = list(EXP_TYPE_GARRISON)

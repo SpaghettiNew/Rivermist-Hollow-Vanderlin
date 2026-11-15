@@ -149,10 +149,12 @@
 			for(var/line in t)
 				. += line
 	if(proper_drying)
-		desc += span_notice("\n This was properly washed and dried off, it smells good!")
+		. += span_notice("This was properly washed and dried off; it smells good.")
 
-
-
+	var/list/social_examine = get_social_examine_text()
+	if(social_examine)
+		for(var/line in social_examine)
+			. += line
 
 /obj/item/clothing/MiddleClick(mob/living/user, list/modifiers)
 	..()

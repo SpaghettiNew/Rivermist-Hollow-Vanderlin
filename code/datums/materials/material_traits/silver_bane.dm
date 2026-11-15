@@ -1,10 +1,16 @@
 /datum/material_trait/silver_bane
 	name = "Silver Bane"
 
+
 /datum/material_trait/silver_bane/proc/touch_bane(mob/living/carbon/human/user)
+	if(!user?.mind)
+		return
+
 	var/datum/antagonist/vampire/vamp_datum = user.mind.has_antag_datum(/datum/antagonist/vampire)
 	var/datum/antagonist/werewolf/wolf_datum = user.mind.has_antag_datum(/datum/antagonist/werewolf)
-	if(!vamp_datum || !wolf_datum)
+
+	// Either one is enough.
+	if(!vamp_datum && !wolf_datum)
 		return
 
 	if(istype(vamp_datum, /datum/antagonist/vampire/lord))
@@ -20,7 +26,7 @@
 		user.Knockdown(10)
 		user.Paralyze(10)
 		user.adjustFireLoss(25)
-		user.fire_act(1,10)
+		user.fire_act(1, 10)
 
 
 /datum/material_trait/silver_bane/on_consume(mob/user, amount)

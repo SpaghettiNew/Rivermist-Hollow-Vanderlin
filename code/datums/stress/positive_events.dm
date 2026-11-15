@@ -419,3 +419,23 @@
 	stress_change = -1
 	desc = span_green("Someone gave me a good pie-ing.")
 	timer = 3 MINUTES
+
+/datum/stress_event/fellow
+	timer = 1 MINUTES
+	stress_change = -1
+	desc = span_green("It's good to work together in this hellhole.")
+
+/datum/stress_event/townwatch_commander
+	timer = 2 MINUTES
+	stress_change = -2
+	desc = span_green("It's nice to see someone who is in charge.")
+
+/datum/stress_event/highrank_respect
+	timer = 3 MINUTES
+	stress_change = -3
+	desc = span_green("Finally someone high-ranking. No need to worry to think on my own.")
+
+/datum/stress_event/rely_on
+	timer = 1 MINUTES
+	stress_change = -1
+	desc = span_green("Should rely on them if i need help.")

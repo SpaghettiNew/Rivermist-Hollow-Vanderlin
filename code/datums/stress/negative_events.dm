@@ -770,3 +770,33 @@
 
 /datum/stress_event/malaguero/can_show(mob/living/user)
 	return istiefling(user) || ..()
+
+/datum/stress_event/outlaw_near_watch
+	timer = 1 MINUTES
+	stress_change = 2
+	desc = span_red("I feel the eyes of the law upon me.")
+
+/datum/stress_event/townwatch_disguised_authority
+	timer = 2 MINUTES
+	stress_change = 1
+	desc = span_red("Who the hell is that? That's not the captain!")
+
+/datum/stress_event/paranoia
+	timer = 1 MINUTES
+	stress_change = 2
+	desc = span_red("Who is this?")
+
+/datum/stress_event/unease
+	timer = 1 MINUTES
+	stress_change = 1
+	desc = span_red("Better don't stay here for too long...")
+
+/datum/stress_event/tense
+	timer = 2 MINUTES
+	stress_change = 1
+	desc = span_red("Not feeling good sharing a boat with them.")
+
+/datum/stress_event/fearful
+	timer = 2 MINUTES
+	stress_change = 4
+	desc = span_red("This isn't happening, not them!")

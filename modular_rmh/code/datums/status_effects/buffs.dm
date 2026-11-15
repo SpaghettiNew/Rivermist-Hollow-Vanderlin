@@ -77,3 +77,31 @@
 	name = "Battle Song"
 	desc = span_nicegreen("I FEEL INSPIRED!")
 	icon_state = "ravox"
+
+//BATTLECHARM
+
+/datum/status_effect/buff/halberd_wave
+	id = "halberd_wave"
+	duration = 2 SECONDS
+	alert_type = null
+
+/datum/status_effect/buff/halberd_wave/on_apply()
+	. = ..()
+
+	owner.add_movespeed_modifier(id, multiplicative_slowdown = 2)
+	return .
+
+/datum/status_effect/buff/halberd_wave/on_remove()
+	owner.remove_movespeed_modifier(id)
+	return ..()
+
+/datum/status_effect/buff/charm_wave
+	id = "halberd_wave"
+	alert_type = /atom/movable/screen/alert/status_effect/buff/charm_wave
+	effectedstats = list(STATKEY_STR = 1, STATKEY_END = 2)
+	duration = 60 SECONDS
+
+/atom/movable/screen/alert/status_effect/buff/charm_wave
+	name = "Charm's Touch"
+	desc = span_nicegreen("When the garrison flag is waving... I feel INSPIRED!")
+	icon_state = "ravox"

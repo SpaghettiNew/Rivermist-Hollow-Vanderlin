@@ -298,6 +298,9 @@ GLOBAL_LIST_INIT(roleplay_readme, world.file2list("strings/rt/Lore_Primer.txt"))
 				return "You must wait [remaining_time] seconds before playing as an [jobtitle] again."
 		if(JOB_UNAVAILABLE_WHITELIST)
 			return "You are not whitelisted for [jobtitle]."
+		if(JOB_UNAVAILABLE_REQUIRED_JOB)
+			var/datum/job/gated_job = SSjob.GetJob(jobtitle)
+			return "[jobtitle]: [gated_job?.get_required_jobs_text()]"
 	return "Error: Unknown job availability."
 
 //used for latejoining
@@ -384,6 +387,9 @@ GLOBAL_LIST_INIT(roleplay_readme, world.file2list("strings/rt/Lore_Primer.txt"))
 	var/datum/patron/selected_patron = client.prefs.read_preference(/datum/preference/choiced/patron)
 	if(length(job.allowed_patrons) && !(selected_patron?.type in job.allowed_patrons))
 		return JOB_UNAVAILABLE_DEITY
+	// Checked last, so the latejoin menu greys out only jobs the player could take.
+	if(latejoin && !job.required_jobs_present())
+		return JOB_UNAVAILABLE_REQUIRED_JOB
 	return JOB_AVAILABLE
 
 /mob/dead/new_player/proc/AttemptLateSpawn(rank)
@@ -488,6 +494,8 @@ GLOBAL_LIST_INIT(roleplay_readme, world.file2list("strings/rt/Lore_Primer.txt"))
 			continue
 
 		var/list/available_jobs = list()
+		// Jobs shown greyed out because their required jobs are absent.
+		var/list/gated_jobs = list()
 		for(var/job in category)
 			var/datum/job/job_datum = SSjob.name_occupations[job]
 			if(!job_datum)
@@ -495,6 +503,10 @@ GLOBAL_LIST_INIT(roleplay_readme, world.file2list("strings/rt/Lore_Primer.txt"))
 			// Make sure hiv+ jobs always appear on list, even if unavailable
 			var/unavailable_reason = IsJobUnavailable(job_datum.title, TRUE)
 			var/is_job_available = (unavailable_reason == JOB_AVAILABLE)
+			if(unavailable_reason == JOB_UNAVAILABLE_REQUIRED_JOB)
+				available_jobs += job
+				gated_jobs[job] = TRUE
+				continue
 			if(!is_job_available && CONFIG_GET(flag/log_job_debug))
 				var/datum/patron/selected_patron = client.prefs.read_preference(/datum/preference/choiced/patron)
 				log_job_debug("Latejoin unavailable, Player: [ckey], Job: [job_datum.title], Patron: [selected_patron?.type], Reason: [get_job_unavailable_error_message(unavailable_reason, job_datum.title)]")
@@ -578,7 +590,9 @@ GLOBAL_LIST_INIT(roleplay_readme, world.file2list("strings/rt/Lore_Primer.txt"))
 						ignore_pronouns = TRUE,
 					)
 					var/current_positions = job_datum.get_position_count()
-					if(job_datum in SSjob.prioritized_jobs)
+					if(gated_jobs[job])
+						dat += "<span class='job gated' title=\"[html_encode(job_datum.get_required_jobs_text())]\">[used_name] ([current_positions])</span>"
+					else if(job_datum in SSjob.prioritized_jobs)
 						dat += "<a class='job[command_bold]' href='byond://?src=[REF(src)];SelectedJob=[job_datum.title]'><span class='priority'>[used_name] ([current_positions])</span></a>"
 					else
 						dat += "<a class='job[command_bold]' href='byond://?src=[REF(src)];SelectedJob=[job_datum.title]'>[used_name] ([current_positions])</a>"

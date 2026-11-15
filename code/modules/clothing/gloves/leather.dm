@@ -77,6 +77,7 @@
 	desc = "Gloves of worn leather. Alas, the exotic fetish wrapped around one is but a powerless replica."
 	icon_state = "inqgloves"
 	item_state = "inqgloves"
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:sergeant" = 5, "elite:town_watch" = 3)
 
 //Luskanian Duelist Merc - On par with Darkholdian's stats.
 /obj/item/clothing/gloves/leather/duelgloves

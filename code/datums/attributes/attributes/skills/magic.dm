@@ -13,6 +13,16 @@
 		"...since the death of God, there has been a vacancy in the realm of miracleworkers... you can change this..."
 	)
 
+/datum/attribute/skill/magic/holy/on_level_change(mob/owner, new_level, old_level)
+	if(!isliving(owner))
+		return
+	var/mob/living/living_owner = owner
+	// Novice Miracles and above know Blessed Union.
+	if(new_level >= SKILL_LEVEL_NOVICE && old_level < SKILL_LEVEL_NOVICE)
+		living_owner.add_spell(/datum/action/cooldown/spell/undirected/blessed_union)
+	else if(new_level < SKILL_LEVEL_NOVICE && old_level >= SKILL_LEVEL_NOVICE)
+		living_owner.remove_spell(/datum/action/cooldown/spell/undirected/blessed_union)
+
 /datum/attribute/skill/magic/blood
 	name = "Blood Sorcery"
 	desc = "Represents your character's ability to perform blood magic. The higher your skill in Blood Sorcery, the more powerful your blood magic will be."

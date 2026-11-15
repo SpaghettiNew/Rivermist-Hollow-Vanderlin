@@ -70,6 +70,34 @@
 	skillcraft = /datum/attribute/skill/craft/traps
 	craftdiff = 3
 
+/datum/repeatable_crafting_recipe/survival/bola/electro
+	name = "shock bola"
+	requirements = list(
+		/obj/item/rope/net/bola = 1,
+		/obj/item/gem/yellow = 1
+	)
+
+	starting_atom = /obj/item/rope/net/bola
+	attacked_atom = /obj/item/gem/yellow
+	output = /obj/item/rope/net/bola/electro
+	crafting_message = "begins to fit the gem and tying it to the bola"
+	skillcraft = /datum/attribute/skill/craft/traps
+	craftdiff = 2
+
+/datum/repeatable_crafting_recipe/survival/bola/mantrap
+	name = "Throwable Mantrap"
+	requirements = list(
+		/obj/item/rope/chain = 1,
+		/obj/item/restraints/legcuffs/beartrap = 1
+	)
+
+	starting_atom = /obj/item/rope/chain
+	attacked_atom = /obj/item/restraints/legcuffs/beartrap
+	output = /obj/item/rope/net/bola/mantrap
+	crafting_message = "Connects the beartrap to the chain"
+	skillcraft = /datum/attribute/skill/craft/traps
+	craftdiff = 2
+
 /datum/repeatable_crafting_recipe/survival/woodenbucket
 	name = "wooden bucket"
 	requirements = list(

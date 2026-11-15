@@ -127,6 +127,61 @@
 #define OVI_EGG_TRAIT_PARASITE "parasite"
 #define OVI_EGG_TRAIT_FAST_GROWTH "fast_growth"
 
+//Social stealth related defines including factions
+//
+#define SOCIAL_RELATION_ALLIED             "allied"
+#define SOCIAL_RELATION_HOSTILE            "hostile"
+#define SOCIAL_RELATION_PROTECT_DUTY       "protect_duty"
+#define SOCIAL_RELATION_DIPLOMATIC_HOSTILE "diplomatic_hostile"
+#define SOCIAL_RELATION_HOSTILE_TO_WATCH   "hostile_to_watch"
+#define SOCIAL_RELATION_TENSE              "tense"
+#define SOCIAL_RELATION_NEUTRAL            "neutral"
+#define SOCIAL_RELATION_COOPERATIVE       "cooperative"
+#define SOCIAL_RELATION_HIGHER_RANK       "higher_rank"
+#define SOCIAL_RELATION_LOYAL              "loyal"
+#define SOCIAL_RELATION_FEARFUL	    		"fearful"
+#define SOCIAL_RELATION_SEPARATED_AUTHORITY "separated_authority"
+#define SOCIAL_RELATION_DISAGREEING         "disagreeing"
+
+
+#define SOCIAL_SOURCE_KNOWLEDGE   (1 << 0)
+#define SOCIAL_SOURCE_COSMETIC    (1 << 1)
+#define SOCIAL_SOURCE_IDENTITY    (1 << 2)
+#define SOCIAL_SOURCE_PERSONNEL   (1 << 3)
+#define SOCIAL_SOURCE_STATUS      (1 << 4)
+#define SOCIAL_SOURCE_ELITE       (1 << 5)
+#define SOCIAL_SOURCE_PRESTIGE    (1 << 6)
+
+#define SOCIAL_LEVEL_UNKNOWN      0
+#define SOCIAL_LEVEL_APPARENT     1
+#define SOCIAL_LEVEL_KNOWN        2
+
+#define SOCIAL_PRESENTATION_INSUFFICIENT 0
+#define SOCIAL_PRESENTATION_RECOGNIZABLE 1
+#define SOCIAL_PRESENTATION_CONVINCING   2
+
+#define SOCIAL_LEGITIMACY_UNKNOWN       "unknown"
+#define SOCIAL_LEGITIMACY_PARTIAL       "partial"
+#define SOCIAL_LEGITIMACY_SOLID         "solid"
+#define SOCIAL_LEGITIMACY_SUSPICIOUS    "suspicious"
+#define SOCIAL_LEGITIMACY_DISGUISED     "disguised"
+
+#define SOCIAL_PRESTIGE_THRESHOLD 5
+
+#define TOWNWATCH_COMMAND_MEMBER 0
+#define TOWNWATCH_COMMAND_SERGEANT 1
+#define TOWNWATCH_COMMAND_CAPTAIN 2
+
+#define TOWNWATCH_ORDER_ATTACK "attack"
+#define TOWNWATCH_ORDER_MOVEMENT "movement"
+#define TOWNWATCH_ORDER_DEFENSE "defense"
+
+#define TOWNWATCH_COMMAND_MODE_TARGETED "targeted"
+#define TOWNWATCH_COMMAND_MODE_GLOBAL "global"
+
+#define TOWNWATCH_COMMAND_RANGE 7
+#define TOWNWATCH_TARGETED_COMMAND_COOLDOWN (20 SECONDS)
+#define TOWNWATCH_GLOBAL_COMMAND_COOLDOWN (60 SECONDS)
 /// What kind of part a slot takes. Prosthetic options and implants list the kinds they fit.
 #define PROSTHETIC_KIND_ARM "arm"
 #define PROSTHETIC_KIND_LEG "leg"
@@ -157,3 +212,8 @@
 #ifndef HEARING_MESSAGE_MODE
 #define HEARING_MESSAGE_MODE 7
 #endif
+
+/// Added to the victim's perception when a sneaking thief goes for their underwear.
+#define UNDERWEAR_STEAL_PERCEPTION_BONUS 3
+/// Multiplies pickpocket time for underwear theft.
+#define UNDERWEAR_STEAL_TIME_MULT 2

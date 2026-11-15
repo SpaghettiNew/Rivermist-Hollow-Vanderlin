@@ -61,6 +61,7 @@
 	desc = "A slingable sheath made of leather, enamored with elaborate silver decorations, often seen on the hips of nobles"
 	icon_state = "nsheath"
 	sellprice = 50
+	social_cues = list("prestige" = 3)
 
 /obj/item/weapon/scabbard/knife/royal
 	item_weight = 120 GRAMS
@@ -68,6 +69,7 @@
 	desc = "A slingable sheath made of leather, enamored with exquisite golden decorations, often seen on the hips of royalty"
 	icon_state = "rsheath"
 	sellprice = 100
+	social_cues = list("prestige" = 3)
 
 /obj/item/weapon/scabbard/sword
 	item_weight = 300 GRAMS
@@ -106,6 +108,7 @@
 	desc = "A scabbard designed to hold a sword. This one is decorated on a silver platter."
 	icon_state = "nscabbard"
 	sellprice = 50
+	social_cues = list("prestige" = 3)
 
 /obj/item/weapon/scabbard/sword/royal
 	item_weight = 400 GRAMS
@@ -113,6 +116,7 @@
 	desc = "A scabbard designed to hold a sword. This one is lined with golden fittings, fit for a royal."
 	icon_state = "rscabbard"
 	sellprice = 100
+	social_cues = list("prestige" = 3)
 
 /obj/item/weapon/scabbard/cane
 	item_weight = 500 GRAMS
@@ -238,3 +242,4 @@
 	icon_state = "kazscab_gold"
 	item_state = "kazscab_gold"
 	max_integrity = INTEGRITY_STRONGEST
+	social_cues = list("prestige" = 3)

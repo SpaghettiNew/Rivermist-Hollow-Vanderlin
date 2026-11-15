@@ -55,10 +55,16 @@
 	/// can be opened on a /mob/dead/new_player for the lobby character preview.
 	var/list/examine_panels
 
+/mob/living/carbon
+	/// Emergency sergeant recruitment action granted when there is no Town Watch captain on duty.
+	var/datum/action/cooldown/spell/undirected/list_target/convert_role/town_watch/town_watch_recruit_action
+
 /mob/living/carbon/human
 	/// Cached base64 examine preview snapshots, indexed by "[dir]". Wiped on a
 	/// fresh examine (reset_examine_preview) so re-examining shows current state.
 	var/list/examine_preview_cache
+	/// Command trait for town watch authority granted to a human captain/sergeant.
+	var/datum/town_watch_command_trait/town_watch_command_trait
 
 /**
  * Returns a base64 data URL of this human flattened via getFlatIcon in the wanted direction.
@@ -153,7 +159,7 @@
 // -------------------------------------------------------------------------
 // Worn equipment slots shown around the character preview.
 // Mirrors exactly what Examine prints to chat: get_unobscured_items()
-// (so armor/cloaks hiding a slot hide it here too) plus held items.
+// (so armor/cloaks hiding a slot hide it here) plus held items.
 // -------------------------------------------------------------------------
 
 /// Item sprites encoded once per icon+state+color, shared server-wide

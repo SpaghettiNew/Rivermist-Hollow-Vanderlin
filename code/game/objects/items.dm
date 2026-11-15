@@ -220,6 +220,9 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 
 	var/thrown_bclass = BCLASS_BLUNT
 
+/// Whether this item's thrown impact bypasses the normal armour calculation.
+	var/ignore_throw_armor = FALSE
+
 	var/icon/experimental_inhand = TRUE
 	var/icon/experimental_onhip = FALSE
 	var/icon/experimental_onback = FALSE
@@ -344,9 +347,77 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	var/loadout_blacklisted = FALSE
 
 	var/allow_erp_equipped = FALSE
-
+	//Items can or will define to which faction they represent
+	var/list/social_cues
 
 	var/toggle_state // Needed for grandmaster/martyr weapons, might be shitcode, might be usable for the future, *shrug, it works
+
+/**
+ * Hook for items to declare their social recognition cues.
+ *
+ * Items contribute to social recognition through their visual presentation.
+ * This hook allows items to declare which social profiles they contribute to
+ * and how much they contribute (their score value).
+ *
+ * Used by: /datum/social_profile/proc/get_cosmetic_score()
+ *          in code/modules/mob/living/carbon/examine.dm
+ *
+ * Returns: associative list of profile_id = score
+ *          Example: list("authority_rank_insignia" = 3)
+ *
+ * Social profiles use these scores to determine if an observer can recognize
+ * the target's affiliation based on visible equipment.
+ */
+/obj/item/proc/get_social_cue_strength(value)
+	switch(value)
+		if(1 to 2)
+			return "minor"
+		if(3 to 4)
+			return "moderate"
+		if(5 to 7)
+			return "strong"
+		if(8 to INFINITY)
+			return "very strong"
+		else
+			return "negligible"
+
+
+/obj/item/proc/get_social_cue_rank_name(cue_key)
+	for(var/datum/social_profile/profile as anything in GLOB.social_profiles)
+		if(!profile)
+			continue
+
+		var/title = profile.apparent_rank_titles[cue_key]
+		if(title)
+			return title
+
+	return null
+
+
+/obj/item/proc/get_social_cue_specialization_name(cue_key)
+	for(var/datum/social_profile/profile as anything in GLOB.social_profiles)
+		if(!profile)
+			continue
+
+		var/title = profile.apparent_specialization_titles[cue_key]
+		if(title)
+			return title
+
+	return null
+
+
+/obj/item/proc/get_social_cue_faction_name(cue_key)
+	for(var/datum/social_profile/profile as anything in GLOB.social_profiles)
+		if(!profile)
+			continue
+
+		if(profile.faction_cue_key == cue_key)
+			return profile.display_name
+
+		if(profile.elite_cue_key == cue_key)
+			return profile.display_name
+
+	return null
 
 /obj/item/proc/get_default_item_intent_index()
 	if(!default_item_intent || !length(possible_item_intents))
@@ -1774,6 +1845,137 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	RETURN_TYPE(/obj/item)
 
 	return src
+/// Helper for the social cues on clothing item
+
+/obj/item/proc/get_social_cue_strength_text(value)
+	switch(value)
+		if(-INFINITY to 0)
+			return null
+		if(1 to 2)
+			return "minor"
+		if(3 to 4)
+			return "moderate"
+		if(5 to 7)
+			return "strong"
+		if(8 to INFINITY)
+			return "very strong"
+
+	return null
+
+/obj/item/proc/get_social_cues()
+	return social_cues
+
+/obj/item/proc/get_social_cue_profile(cue_key)
+	if(!cue_key || !length(GLOB.social_profiles))
+		return null
+
+	for(var/datum/social_profile/profile as anything in GLOB.social_profiles)
+		if(!profile)
+			continue
+
+		if(profile.faction_cue_key == cue_key)
+			return profile
+
+		if(profile.elite_cue_key == cue_key)
+			return profile
+
+		if(profile.apparent_rank_titles[cue_key])
+			return profile
+
+		if(profile.apparent_specialization_titles[cue_key])
+			return profile
+
+	return null
+
+
+/obj/item/proc/get_social_cue_display_name(cue_key)
+	var/datum/social_profile/profile = get_social_cue_profile(cue_key)
+	if(!profile)
+		return null
+
+	/* Faction cue. */
+	if(profile.faction_cue_key == cue_key)
+		return profile.display_name
+
+	/* Elite equipment belongs to the same faction. */
+	if(profile.elite_cue_key == cue_key)
+		return "[profile.display_name] elite equipment"
+
+	/* Rank cue. */
+	var/rank_title = profile.apparent_rank_titles[cue_key]
+	if(rank_title)
+		return rank_title
+
+	/* Specialization cue. */
+	var/specialization_title = profile.apparent_specialization_titles[cue_key]
+	if(specialization_title)
+		return specialization_title
+
+	return null
+
+
+/obj/item/proc/get_social_cue_category(cue_key)
+	if(!cue_key)
+		return null
+	if(findtext(cue_key, "faction:") == 1)
+		return "faction"
+	if(findtext(cue_key, "elite:") == 1)
+		return "elite"
+	if(findtext(cue_key, "rank:") == 1)
+		return "rank"
+	if(findtext(cue_key, "specialization:") == 1)
+		return "specialization"
+	if(cue_key == "prestige")
+		return "prestige"
+
+	return null
+
+
+/obj/item/proc/get_social_examine_text()
+	var/list/cues = get_social_cues()
+	if(!length(cues))
+		return null
+
+	var/list/result = list()
+
+	for(var/cue_key in cues)
+		var/cue_value = cues[cue_key]
+		if(isnull(cue_value) || cue_value <= 0)
+			continue
+
+		var/category = get_social_cue_category(cue_key)
+		if(!category)
+			continue
+
+		var/strength = get_social_cue_strength_text(cue_value)
+		if(!strength)
+			continue
+
+		var/display_name
+
+		switch(category)
+			if("faction")
+				display_name = get_social_cue_display_name(cue_key)
+				if(display_name)
+					result += span_notice("Social affiliation: [display_name] ([strength] contribution).")
+			if("elite")
+				display_name = get_social_cue_display_name(cue_key)
+				if(display_name)
+					result += span_notice("Elite status: [display_name] ([strength] contribution).")
+			if("rank")
+				display_name = get_social_cue_display_name(cue_key)
+				if(display_name)
+					result += span_notice("Rank: [display_name] ([strength] contribution).")
+			if("specialization")
+				display_name = get_social_cue_display_name(cue_key)
+				if(display_name)
+					result += span_notice("Specialization: [display_name] ([strength] contribution).")
+			if("prestige")
+				result += span_notice("Prestige: [strength] contribution.")
+
+	return result
+
+
 
 /obj/item/atom_break(damage_flag, silent)
 	. = ..()

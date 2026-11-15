@@ -168,6 +168,10 @@
 /// Max distance a newly-arrived client may be from the pawn to arm the client alert grace period. Farther passers-by crossing our wide tracking radius must not keep us awake.
 #define AI_ALERT_ON_CLIENT_DIST 7
 #define AI_RANGED_HOT_PURSUIT_TIME (15 SECONDS)
+/// world.time of the last hit the pawn took from someone else.
+#define BB_LAST_ATTACKED_AT "bb_last_attacked_at"
+/// After a hit, the pawn counts as in combat for this long.
+#define AI_COMBAT_CALM_TIME (10 SECONDS)
 #define BB_HEALING_SOURCE "healing_source" // Who last healed the mob
 #define BB_SNEAKING "bb_sneaking"
 #define BB_SNEAK_COOLDOWN "bb_sneak_cooldown"

@@ -5049,7 +5049,8 @@ var setup = async (config) => {
   }
   let buildModule = await import(config.file);
   const isCommonJs = Boolean((0, import_module.createRequire)(config.file).cache[config.file]);
-  if (isCommonJs) {
+  // Bun lists ES modules in require.cache too; an ES build file exports a Target as default.
+  if (isCommonJs && !(buildModule.default instanceof Target)) {
     buildModule = buildModule.default;
   }
   const targets = [];

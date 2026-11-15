@@ -53,6 +53,7 @@
 	item_state = "capplateleg"
 	icon = 'icons/roguetown/clothing/special/captain.dmi'
 	mob_overlay_icon = 'icons/roguetown/clothing/special/onmob/captain.dmi'
+	social_cues = list("faction:town_watch" = 5, "rank:town_watch:captain" = 5, "elite:town_watch" = 3)
 
 /obj/item/clothing/pants/platelegs/rust
 	name = "rusted chausses"

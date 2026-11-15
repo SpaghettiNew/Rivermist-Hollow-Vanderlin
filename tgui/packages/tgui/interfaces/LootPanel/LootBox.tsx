@@ -46,7 +46,8 @@ export function LootBox(props: Props) {
           ref: item.ref,
         })
       }
-      onAuxClick={(event) => {
+      onMouseUp={(event) => {
+        if (event.button === 0) return;
         event.preventDefault();
         act('grab', {
           middle: event.button === 1,
