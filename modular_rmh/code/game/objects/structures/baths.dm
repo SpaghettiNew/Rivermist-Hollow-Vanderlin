@@ -27,7 +27,6 @@
 /obj/structure/bath/Initialize()
 	. = ..()
 	create_reagents(max_reagent_volume, NO_REACT | AMOUNT_VISIBLE | REFILLABLE | DRAINABLE)
-	reagents.add_reagent(/datum/reagent/water, water_overlay_min_volume)
 
 // Изменение положения игрока, ванной и оверлея воды после изменения направления ванной
 /obj/structure/bath/Moved(atom/OldLoc, Dir, Forced = FALSE)
