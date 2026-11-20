@@ -15,6 +15,10 @@
 	var/north_south_occupant_y_offset = 2
 	var/west_occupant_x_offset = 6
 	var/east_occupant_x_offset = -6
+	var/north_south_empty_mask_y_offset = -9
+	var/east_west_empty_mask_y_offset = -6
+	var/north_south_filled_mask_y_offset = -2
+	var/east_west_filled_mask_y_offset = -2
 	var/reagent_touch_amount = 5
 	var/reagent_touch_interval = 30 SECONDS
 	var/reagent_touch_timer
@@ -179,11 +183,12 @@
 
 /obj/structure/bath/proc/update_immersion_mask(mob/living/occupant)
 	var/static/icon/upright_mask = icon('icons/effects/icon_cutter.dmi', "icon_cutter")
-	var/mask_y_offset = -9
-	if(reagents?.total_volume >= water_overlay_min_volume)
-		mask_y_offset = -2
-	else if(dir == EAST || dir == WEST)
-		mask_y_offset = -6
+	var/is_filled = reagents?.total_volume >= water_overlay_min_volume
+	var/mask_y_offset
+	if(dir == EAST || dir == WEST)
+		mask_y_offset = is_filled ? east_west_filled_mask_y_offset : east_west_empty_mask_y_offset
+	else
+		mask_y_offset = is_filled ? north_south_filled_mask_y_offset : north_south_empty_mask_y_offset
 	occupant.add_filter(BATH_IMMERSION_MASK, 1, alpha_mask_filter(0, mask_y_offset, upright_mask, null, MASK_INVERSE))
 
 /obj/structure/bath/update_overlays()
@@ -212,6 +217,8 @@
 /obj/structure/bath/barrel
 	name = "barrel bath"
 	icon_state = "bath_barrel"
+	north_south_empty_mask_y_offset = -2
+	east_west_empty_mask_y_offset = -2
 
 
 // Крафты
