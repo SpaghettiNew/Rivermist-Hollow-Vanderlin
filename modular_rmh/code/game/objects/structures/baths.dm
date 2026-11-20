@@ -87,6 +87,12 @@
 	reagents.remove_reagent(water_type, 5)
 	user.wash(CLEAN_WASH)
 	playsound(user, pick(wash_sounds), 100, FALSE)
+	if(ishuman(user))
+		var/mob/living/carbon/human/bather = user
+		if(bather.wear_armor || bather.wear_shirt || bather.wear_pants)
+			to_chat(bather, span_notice("I can't wash properly with my clothes on."))
+		else
+			bather.add_stress(/datum/stress_event/bathwater)
 
 	var/clean_water_volume = reagents.get_reagent_amount(/datum/reagent/water)
 	if(clean_water_volume >= 5)
