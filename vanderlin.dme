@@ -4593,6 +4593,7 @@
 #include "modular_rmh\code\game\objects\lighting\streetlamp.dm"
 #include "modular_rmh\code\game\objects\structures\anti_magic_field.dm"
 #include "modular_rmh\code\game\objects\structures\barrier.dm"
+#include "modular_rmh\code\game\objects\structures\baths.dm"
 #include "modular_rmh\code\game\objects\structures\bondage_devices.dm"
 #include "modular_rmh\code\game\objects\structures\call_bells.dm"
 #include "modular_rmh\code\game\objects\structures\canopy.dm"
