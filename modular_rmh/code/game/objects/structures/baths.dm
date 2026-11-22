@@ -197,9 +197,9 @@
 /obj/structure/bath/update_overlays()
 	. = ..()
 	if(reagents?.total_volume >= water_overlay_min_volume)
-		var/mutable_appearance/full_overlay = mutable_appearance(icon, "[icon_state]_full")
-		full_overlay.dir = dir
-		. += full_overlay
+		var/mutable_appearance/slime_overlay = mutable_appearance(icon, "[icon_state]_slime")
+		slime_overlay.dir = dir
+		. += slime_overlay
 
 
 #undef BATH_IMMERSION_MASK
