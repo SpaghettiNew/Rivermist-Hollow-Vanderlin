@@ -101,8 +101,6 @@
 		var/mob/living/carbon/human/bather = user
 		if(bather.wear_armor || bather.wear_shirt || bather.wear_pants)
 			to_chat(bather, span_notice("I can't wash properly with my clothes on."))
-		else
-			bather.add_stress(/datum/stress_event/clean)
 
 /obj/structure/bath/user_buckle_mob(mob/living/M, mob/user, check_loc = TRUE)
 	if(M != user || M?.m_intent != MOVE_INTENT_SNEAK || !reagents?.total_volume)
@@ -163,8 +161,6 @@
 	if(QDELETED(occupant) || occupant.buckled != src || occupant.loc != loc)
 		return FALSE
 	var/datum/reagents/bath_reagents = reagents
-	if(bath_reagents && get_bath_water_volume() >= water_overlay_min_volume)
-		occupant.add_stress(/datum/stress_event/clean_plus)
 	for(var/datum/reagent/reagent as anything in bath_reagents?.reagent_list?.Copy())
 		if(QDELETED(bath_reagents) || QDELETED(occupant) || occupant.buckled != src || occupant.loc != loc)
 			break
