@@ -131,18 +131,11 @@
 
 		return ITEM_INTERACT_SUCCESS
 
-	var/turf/T = get_turf(target)
-	if(!istype(T, /turf/open/water))
-		if(istype(T, /turf/open/lava) && user == target) //shits and giggles
-			to_chat(user, span_warning("Why am I doing this..."))
-		else
-			to_chat(user, span_warning("They must be in water!"))
+// RIVERMIST CHANGE START - bath update
+	var/turf/T = find_bathing_spot(target, user)
+	if(!T)
 		return ITEM_INTERACT_BLOCKING
-	else
-		var/turf/open/water/bathspot = T
-		if(!bathspot.wash_in)
-			to_chat(user, span_warning("I can't bathe in this..."))
-			return ITEM_INTERACT_BLOCKING
+// RIMVERMIST CHANGE END
 
 	if(istype(target.head, /obj/item/clothing) || istype(target.wear_armor, /obj/item/clothing) || istype(target.wear_shirt, /obj/item/clothing) || istype(target.cloak, /obj/item/clothing))
 		to_chat(user, span_warning("Can't get a proper bath with clothing on."))
@@ -165,6 +158,12 @@
 
 	if(!do_after(user, 5 SECONDS, target))
 		return ITEM_INTERACT_BLOCKING
+
+// RIVERMIST ADDITION START - bath update
+	T = find_bathing_spot(target, user)
+	if(!T)
+		return ITEM_INTERACT_BLOCKING
+// RIMVERMIST CHANGE END
 
 	playsound(T, pick('sound/foley/waterwash (1).ogg','sound/foley/waterwash (2).ogg'), 100, FALSE)
 	scrub_scrub(target, user)
@@ -220,3 +219,24 @@
 		to_chat(target, span_green("I feel so relaxed and clean!"))
 		target.apply_status_effect(/datum/status_effect/buff/clean_plus)
 		user.add_stress(/datum/stress_event/clean_plus)
+
+// RIVERMIST ADDITION START - bath update
+/obj/item/soap/proc/find_bathing_spot(mob/living/carbon/human/target, mob/living/user)
+	var/turf/T = get_turf(target)
+	var/obj/structure/bath/bath = target.buckled
+	if(istype(bath))
+		if(bath.reagents && bath.get_bath_water_volume() >= bath.water_overlay_min_volume)
+			return T
+		to_chat(user, span_warning("Bath should be filled with at least for [bath.water_overlay_min_volume] water to wash in there"))
+		return null
+
+	if(!istype(T, /turf/open/water))
+		to_chat(user, span_warning("They must be in water!"))
+		return null
+
+	var/turf/open/water/bathspot = T
+	if(!bathspot.wash_in)
+		to_chat(user, span_warning("I can't bathe in this..."))
+		return null
+	return T
+// RIMVERMIST ADDITION END
