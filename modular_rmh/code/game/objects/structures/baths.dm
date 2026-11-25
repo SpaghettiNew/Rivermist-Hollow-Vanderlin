@@ -73,6 +73,37 @@
 		wash_occupant(user)
 	return TRUE
 
+/obj/structure/bath/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	if(user.cmode || !istype(tool, /obj/item/clothing) || is_type_in_list(user.used_intent, list(INTENT_SOAK, INTENT_WRING)))
+		return ..()
+
+	var/obj/item/clothing/clothing = tool
+	if(!reagents?.has_reagent(/datum/reagent/water, 5) && !reagents?.has_reagent(/datum/reagent/water/gross, 5))
+		to_chat(user, span_warning("No water to wash these stains."))
+		return ITEM_INTERACT_BLOCKING
+
+	var/list/wash_sounds = list('sound/foley/waterwash (1).ogg', 'sound/foley/waterwash (2).ogg')
+	user.visible_message(span_info("[user] starts to wash [clothing] in [src]."))
+	playsound(user, pick_n_take(wash_sounds), 100, FALSE)
+	if(!do_after(user, 3 SECONDS, src) || QDELETED(src) || QDELETED(clothing) || clothing.loc != user)
+		return ITEM_INTERACT_BLOCKING
+
+	var/water_type = /datum/reagent/water
+	if(!reagents?.has_reagent(water_type, 5))
+		water_type = /datum/reagent/water/gross
+		if(!reagents?.has_reagent(water_type, 5))
+			to_chat(user, span_warning("No water to wash these stains."))
+			return ITEM_INTERACT_BLOCKING
+
+	var/dirty_water = !!reagents.has_reagent(/datum/reagent/water/gross)
+	reagents.remove_reagent(water_type, 5)
+	if(clothing.wetable)
+		clothing.wet.add_water(20, dirty = dirty_water, washed_properly = TRUE)
+	clothing.wash(CLEAN_WASH)
+	user.nobles_seen_servant_work()
+	playsound(user, pick(wash_sounds), 100, FALSE)
+	return ITEM_INTERACT_SUCCESS
+
 /obj/structure/bath/proc/get_bath_water_volume()
 	if(!reagents)
 		return 0
@@ -317,3 +348,8 @@
 		to_chat(user, span_warning("I need master masonry skill to build this."))
 		return FALSE
 	return ..()
+
+
+// SOME STUFF
+
+
