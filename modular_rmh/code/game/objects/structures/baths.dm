@@ -4,12 +4,10 @@
 	name = "bath"
 	icon = 'modular_rmh/icons/obj/structures/baths.dmi'
 	icon_state = "bath_wooden"
-	density = TRUE
+	density = FALSE
 	anchored = FALSE
 	move_resist = MOVE_FORCE_NORMAL
 	drag_slowdown = 6
-	can_buckle = TRUE
-	buckle_lying = 0
 	var/max_reagent_volume = 900
 	var/water_overlay_min_volume = 600 // Минимальный объем который нужен для мытья в ванной. Обычно 2/3 от её объема
 	var/north_south_occupant_y_offset = 2
@@ -20,17 +18,13 @@
 	var/east_west_empty_mask_y_offset = -6
 	var/north_filled_mask_y_offset = -2
 	var/south_filled_mask_y_offset = -2
-	var/east_west_filled_mask_y_offset = -2
+	var/east_west_filled_mask_y_offset = -4
 	var/reagent_touch_amount = 5
 	var/reagent_touch_interval = 30 SECONDS
 	var/reagent_touch_timer
-	var/sneak_buckle_delay = 5 SECONDS
-	var/mob/living/bath_trap_occupant
-	var/turf/bath_trap_entry
-	var/obj/item/reagent_containers/food/snacks/slime_core_egg/bath_trap_core
-	var/mob/living/simple_animal/hostile/retaliate/slime_tendrils/bath_trap_proxy
-	var/datum/sex_scene_controller/bath_trap_scene
-	var/bath_trap_timer
+	var/turf/occupant_turf
+	var/entry_delay = 1 SECONDS
+	var/list/entry_attempts
 
 
 
@@ -40,11 +34,11 @@
 /obj/structure/bath/Initialize()
 	. = ..()
 	create_reagents(max_reagent_volume, AMOUNT_VISIBLE | REFILLABLE | DRAINABLE)
+	update_occupant_turf(isturf(loc) ? loc : null)
 
 /obj/structure/bath/Destroy()
-	clear_bath_trap()
+	update_occupant_turf(null)
 	stop_reagent_touch_timer()
-	release_bath_trap_items(get_turf(src))
 	return ..()
 
 
@@ -53,31 +47,19 @@
 // Взаимодействие и мытьё
 
 /obj/structure/bath/attack_hand(mob/living/user, list/modifiers)
-	if(bath_trap_occupant)
-		try_release_bath_trap(user)
-		return TRUE
-	if(release_bath_trap_items(get_turf(user), keep_cores = TRUE))
-		return TRUE
-	if(user.buckled == src)
-		add_fingerprint(user)
-	else
-		if(has_buckled_mobs())
+	if(!is_bath_reagent_occupant(user))
+		if(has_occupants())
 			return ..()
 		if(..())
 			return TRUE
+	else
+		add_fingerprint(user)
 
 	if(!user.cmode)
 		wash_occupant(user)
 	return TRUE
 
 /obj/structure/bath/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
-	if(istype(tool, /obj/item/reagent_containers/food/snacks/slime_core_egg))
-		if(locate(/obj/item/reagent_containers/food/snacks/slime_core_egg) in contents)
-			return ITEM_INTERACT_BLOCKING
-		if(user.transferItemToLoc(tool, src))
-			return ITEM_INTERACT_SUCCESS
-		return ITEM_INTERACT_BLOCKING
-
 	if(user.cmode || !istype(tool, /obj/item/clothing) || is_type_in_list(user.used_intent, list(INTENT_SOAK, INTENT_WRING)))
 		return ..()
 
@@ -132,7 +114,7 @@
 	playsound(user, pick_n_take(wash_sounds), 100, FALSE)
 	if(!do_after(user, 3 SECONDS, src) || QDELETED(src) || QDELETED(user))
 		return
-	if((user.buckled != src && has_buckled_mobs()))
+	if(!is_bath_reagent_occupant(user) && has_occupants())
 		return
 
 	user.wash(CLEAN_WASH)
@@ -145,56 +127,87 @@
 
 
 
-// Посадка и выход
+// Занятость ванны
 
-/obj/structure/bath/user_buckle_mob(mob/living/M, mob/user, check_loc = TRUE)
-	if(bath_trap_occupant)
-		return FALSE
-	if(M == user && M?.m_intent == MOVE_INTENT_SNEAK && reagents?.total_volume)
-		if(!is_user_buckle_possible(M, user, check_loc) || !do_after(user, sneak_buckle_delay, src, hidden = TRUE))
-			return FALSE
-		if(QDELETED(src) || QDELETED(M) || M.m_intent != MOVE_INTENT_SNEAK)
-			return FALSE
-
-	var/turf/entry = get_turf(M)
+/obj/structure/bath/Cross(atom/movable/mover)
 	. = ..()
-	if(. && M == user)
-		var/obj/item/reagent_containers/food/snacks/slime_core_egg/core = get_single_bath_trap_core()
-		core?.on_bath_trap_capture(src, M, entry)
-
-/obj/structure/bath/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
-	if(buckled_mob != user || buckled_mob?.m_intent != MOVE_INTENT_SNEAK || !reagents?.total_volume)
-		return ..()
-	if(buckled_mob.buckled != src || !do_after(user, sneak_buckle_delay, src, hidden = TRUE))
+	if(!. || entry_delay <= 0 || !isliving(mover) || !isturf(mover.loc) || !isturf(loc) || mover.loc == loc || mover.throwing || (mover.movement_type & PHASING))
 		return
-	if(QDELETED(src) || QDELETED(buckled_mob) || buckled_mob.m_intent != MOVE_INTENT_SNEAK)
+	if(LAZYACCESS(entry_attempts, mover) == loc)
 		return
+	if(!LAZYACCESS(entry_attempts, mover))
+		LAZYSET(entry_attempts, mover, TRUE)
+		INVOKE_ASYNC(src, PROC_REF(try_enter_bath), mover, mover.loc, loc)
+	return FALSE
 
+/obj/structure/bath/proc/try_enter_bath(mob/living/entrant, turf/start, turf/destination)
+	var/show_progress = !(locate(/mob/living/carbon/human) in destination)
+	if(!QDELETED(entrant) && entrant.loc == start && loc == destination && do_after(entrant, entry_delay, src, timed_action_flags = IGNORE_SLOWDOWNS, progress = show_progress, hidden = !show_progress))
+		if(!QDELETED(src) && !QDELETED(entrant) && entrant.loc == start && loc == destination)
+			LAZYSET(entry_attempts, entrant, destination)
+			entrant.Move(destination, get_dir(start, destination))
+	LAZYREMOVE(entry_attempts, entrant)
+
+/obj/structure/bath/proc/has_occupants()
+	return isturf(loc) && (locate(/mob/living) in loc)
+
+/obj/structure/bath/can_be_pulled(user, grab_state, force)
+	return !has_occupants() && ..()
+
+/obj/structure/bath/Move(atom/newloc, direct, glide_size_override = 0, update_dir = TRUE)
+	if(newloc != loc)
+		if(has_occupants() || (isturf(newloc) && (locate(/mob/living/carbon/human) in newloc)))
+			return FALSE
 	return ..()
 
-/obj/structure/bath/post_buckle_mob(mob/living/buckled_mob)
-	. = ..()
-	update_occupant_offset(buckled_mob)
-	update_immersion_mask(buckled_mob)
-	if(ishuman(buckled_mob) && reagents?.total_volume < water_overlay_min_volume)
-		to_chat(buckled_mob, span_warning("Bath is half empty, it would be good to fill it with water at least for [water_overlay_min_volume]"))
-	if(buckled_mob.m_intent != MOVE_INTENT_SNEAK && reagents?.total_volume >= water_overlay_min_volume)
+/obj/structure/bath/proc/update_occupant_turf(turf/new_turf)
+	if(occupant_turf == new_turf)
+		return
+	if(occupant_turf)
+		UnregisterSignal(occupant_turf, COMSIG_ATOM_ENTERED)
+		for(var/mob/living/occupant in occupant_turf)
+			remove_occupant_appearance(occupant)
+	occupant_turf = new_turf
+	if(!occupant_turf)
+		return
+	RegisterSignal(occupant_turf, COMSIG_ATOM_ENTERED, PROC_REF(on_occupant_entered))
+	for(var/mob/living/occupant in occupant_turf)
+		add_occupant_appearance(occupant)
+
+/obj/structure/bath/proc/on_occupant_entered(turf/source, atom/movable/arrived, atom/old_loc)
+	SIGNAL_HANDLER
+	if(!isliving(arrived) || old_loc == source)
+		return
+	var/mob/living/occupant = arrived
+	add_occupant_appearance(occupant)
+	if(ishuman(occupant) && reagents?.total_volume < water_overlay_min_volume)
+		to_chat(occupant, span_warning("Bath is half empty, it would be good to fill it with water at least for [water_overlay_min_volume]"))
+	if(occupant.m_intent != MOVE_INTENT_SNEAK && reagents?.total_volume >= water_overlay_min_volume)
 		playsound(src, 'sound/foley/waterenter.ogg', 40, FALSE)
+
+/obj/structure/bath/proc/on_occupant_moved(mob/living/occupant)
+	SIGNAL_HANDLER
+	if(occupant.loc == occupant_turf)
+		return
+	remove_occupant_appearance(occupant)
+	if(occupant.m_intent != MOVE_INTENT_SNEAK && reagents?.total_volume >= water_overlay_min_volume)
+		playsound(src, pick('sound/foley/watermove (1).ogg', 'sound/foley/watermove (2).ogg'), 40, FALSE)
+	if(!has_occupants())
+		stop_reagent_touch_timer()
+
+/obj/structure/bath/proc/add_occupant_appearance(mob/living/occupant)
+	RegisterSignal(occupant, COMSIG_MOVABLE_MOVED, PROC_REF(on_occupant_moved), override = TRUE)
+	update_occupant_offset(occupant)
+	update_immersion_mask(occupant)
 	if(!reagent_touch_timer)
 		reagent_touch_timer = addtimer(CALLBACK(src, PROC_REF(apply_reagent_touch_to_occupants)), reagent_touch_interval, TIMER_STOPPABLE | TIMER_LOOP)
 
-/obj/structure/bath/post_unbuckle_mob(mob/living/unbuckled_mob)
-	. = ..()
-	unbuckled_mob.reset_offsets("bath")
-	unbuckled_mob.remove_filter(BATH_IMMERSION_MASK)
-	if(unbuckled_mob == bath_trap_occupant)
+/obj/structure/bath/proc/remove_occupant_appearance(mob/living/occupant)
+	UnregisterSignal(occupant, COMSIG_MOVABLE_MOVED)
+	if(QDELETED(occupant))
 		return
-	if(!QDELETED(src) && unbuckled_mob.m_intent != MOVE_INTENT_SNEAK && reagents?.total_volume >= water_overlay_min_volume)
-		playsound(src, pick('sound/foley/watermove (1).ogg', 'sound/foley/watermove (2).ogg'), 40, FALSE)
-	if(!has_buckled_mobs() && !bath_trap_occupant)
-		stop_reagent_touch_timer()
-
-
+	occupant.reset_offsets(REF(src))
+	occupant.remove_filter("[BATH_IMMERSION_MASK]-[REF(src)]")
 
 
 // Применение реагентов
@@ -205,8 +218,8 @@
 		reagent_touch_timer = null
 
 /obj/structure/bath/proc/apply_reagent_touch_to_occupants()
-	var/found_occupant = bath_trap_occupant && apply_reagent_touch(bath_trap_occupant)
-	for(var/mob/living/occupant as anything in buckled_mobs?.Copy())
+	var/found_occupant = FALSE
+	for(var/mob/living/occupant in occupant_turf?.contents.Copy())
 		if(apply_reagent_touch(occupant))
 			found_occupant = TRUE
 	if(!found_occupant)
@@ -215,9 +228,7 @@
 /obj/structure/bath/proc/is_bath_reagent_occupant(mob/living/occupant)
 	if(QDELETED(occupant))
 		return FALSE
-	if(occupant == bath_trap_occupant)
-		return occupant.loc == src
-	return occupant.buckled == src && occupant.loc == loc
+	return occupant_turf && occupant.loc == occupant_turf
 
 /obj/structure/bath/proc/apply_reagent_touch(mob/living/occupant)
 	if(!is_bath_reagent_occupant(occupant))
@@ -245,15 +256,14 @@
 
 /obj/structure/bath/Moved(atom/OldLoc, Dir, Forced = FALSE)
 	. = ..()
-	if(bath_trap_entry && get_turf(OldLoc) != get_turf(src))
-		bath_trap_entry = null
+	update_occupant_turf(isturf(loc) ? loc : null)
 	update_directional_appearance()
 
 /obj/structure/bath/proc/update_directional_appearance()
-	for(var/mob/living/occupant as anything in buckled_mobs)
+	for(var/mob/living/occupant in occupant_turf)
 		update_occupant_offset(occupant)
 		update_immersion_mask(occupant)
-	if(bath_trap_occupant || reagents?.total_volume > 0)
+	if(reagents?.total_volume > 0)
 		update_appearance(UPDATE_OVERLAYS)
 
 /obj/structure/bath/proc/update_occupant_offset(mob/living/occupant)
@@ -266,7 +276,7 @@
 			x_offset = west_occupant_x_offset
 		if(EAST)
 			x_offset = east_occupant_x_offset
-	occupant.set_mob_offsets("bath", _x = x_offset, _y = y_offset)
+	occupant.set_mob_offsets(REF(src), _x = x_offset, _y = y_offset)
 
 /obj/structure/bath/setDir(newdir)
 	. = ..()
@@ -275,7 +285,7 @@
 /obj/structure/bath/on_reagent_change(changetype)
 	. = ..()
 	update_appearance(UPDATE_OVERLAYS)
-	for(var/mob/living/occupant as anything in buckled_mobs)
+	for(var/mob/living/occupant in occupant_turf)
 		update_immersion_mask(occupant)
 
 /obj/structure/bath/proc/update_immersion_mask(mob/living/occupant)
@@ -296,17 +306,12 @@
 		empty_offset = south_empty_mask_y_offset
 		filled_offset = south_filled_mask_y_offset
 	var/mask_y_offset = empty_offset + (filled_offset - empty_offset) * fill_fraction
-	occupant.add_filter(BATH_IMMERSION_MASK, 1, alpha_mask_filter(0, mask_y_offset, upright_mask, null, MASK_INVERSE))
+	occupant.add_filter("[BATH_IMMERSION_MASK]-[REF(src)]", 1, alpha_mask_filter(0, mask_y_offset, upright_mask, null, MASK_INVERSE))
 
 /obj/structure/bath/update_overlays()
 	. = ..()
 	var/liquid_volume = reagents?.total_volume
-	if(bath_trap_occupant)
-		var/mutable_appearance/tentacle_overlay = mutable_appearance(icon, "[icon_state]_tentacle")
-		tentacle_overlay.dir = dir
-		tentacle_overlay.color = get_liquid_overlay_color()
-		. += tentacle_overlay
-	else if(liquid_volume > 0)
+	if(liquid_volume > 0)
 		var/mutable_appearance/slime_overlay = mutable_appearance(icon, "[icon_state]_slime")
 		slime_overlay.dir = dir
 		slime_overlay.color = get_liquid_overlay_color()
@@ -366,6 +371,7 @@
 	north_empty_mask_y_offset = -2
 	south_empty_mask_y_offset = -2
 	east_west_empty_mask_y_offset = -2
+	east_west_filled_mask_y_offset = -2
 
 
 
@@ -417,255 +423,3 @@
 		to_chat(user, span_warning("I need master masonry skill to build this."))
 		return FALSE
 	return ..()
-
-
-
-
-
-
-
-///
-// Ловушка ванны
-
-// Запуск и захват
-
-/obj/structure/bath/proc/get_single_bath_trap_core()
-	var/obj/item/reagent_containers/food/snacks/slime_core_egg/selected_core
-	for(var/obj/item/reagent_containers/food/snacks/slime_core_egg/core in contents)
-		if(QDELETED(core))
-			continue
-		if(selected_core)
-			return null
-		selected_core = core
-	return selected_core
-
-/obj/structure/bath/proc/begin_bath_trap(mob/living/victim, turf/entry, obj/item/reagent_containers/food/snacks/slime_core_egg/core)
-	if(bath_trap_occupant || QDELETED(core) || core.loc != src)
-		return
-	if(get_bath_water_volume() < water_overlay_min_volume)
-		return
-	if(QDELETED(victim) || victim.buckled != src || !victim.client || !ishuman(victim) || victim.stat == DEAD || (victim.status_flags & GODMODE))
-		return
-	if(HAS_TRAIT(victim, TRAIT_DEFEAT_REFUSE_ADVANCES) || !(victim.get_cached_horny_mob_family_flags() & HORNY_MOB_TYPE_TENTACLES) || !victim.get_cached_horny_mob_pref_flags())
-		return
-
-	bath_trap_proxy = new(get_turf(src))
-	bath_trap_scene = bath_trap_proxy.open_sex_scene(victim, FALSE)
-	if(!bath_trap_scene || !start_bath_trap_action(victim))
-		clear_bath_trap()
-		return
-
-	bath_trap_occupant = victim
-	bath_trap_entry = entry
-	bath_trap_core = core
-	unbuckle_mob(victim, force = TRUE, can_fall = FALSE)
-	victim.forceMove(src)
-	bath_trap_proxy.forceMove(src)
-	victim.add_traits(list(TRAIT_IMMOBILIZED, TRAIT_HANDS_BLOCKED, TRAIT_MUTE, TRAIT_SPELLBLOCK), REF(src))
-	victim.become_blind(REF(src))
-	RegisterSignal(victim, COMSIG_MOB_ABILITY_STARTED, PROC_REF(block_bath_trap_ability))
-	RegisterSignal(victim, list(COMSIG_MOB_BEFORE_SPELL_CAST, COMSIG_MOB_SPELL_ACTIVATED), PROC_REF(block_bath_trap_spell))
-	bath_trap_scene.set_current_force(rand(SEX_FORCE_MID, SEX_FORCE_EXTREME))
-	bath_trap_scene.set_current_speed(rand(SEX_SPEED_MID, SEX_SPEED_EXTREME))
-	collect_bath_trap_items(victim)
-	update_appearance(UPDATE_OVERLAYS)
-	bath_trap_timer = addtimer(CALLBACK(src, PROC_REF(check_bath_trap)), 1 SECONDS, TIMER_STOPPABLE | TIMER_LOOP)
-
-/obj/structure/bath/proc/start_bath_trap_action(mob/living/victim)
-	var/list/actions = list(
-		/datum/sex_action/npc/npc_anal_sex/tentacle/maneater/bath,
-		/datum/sex_action/npc/npc_throat_sex/tentacle/maneater/bath,
-		/datum/sex_action/maneater_vine_caress/bath,
-	)
-	if(victim.getorganslot(ORGAN_SLOT_VAGINA))
-		actions += /datum/sex_action/npc/npc_vaginal_sex/tentacle/maneater/bath
-	if(victim.getorganslot(ORGAN_SLOT_PENIS))
-		actions += /datum/sex_action/tentacle_jerk/maneater/bath
-	while(length(actions))
-		if(bath_trap_scene.try_start_action(pick_n_take(actions), "ai"))
-			break
-	return length(bath_trap_scene.get_active_actions()) > 0
-
-/obj/structure/bath/proc/collect_bath_trap_items(mob/living/victim)
-	var/list/items = victim.get_equipped_items(TRUE) | victim.held_items
-	for(var/obj/item/item as anything in items)
-		if(item?.loc == victim)
-			victim.transferItemToLoc(item, src, force = TRUE, silent = TRUE)
-	var/turf/bath_turf = get_turf(src)
-	for(var/obj/item/item in bath_turf)
-		if(item.anchored || QDELETED(item))
-			continue
-		item.forceMove(src)
-
-// Ограничения внутри ловушки
-
-/obj/structure/bath/proc/block_bath_trap_ability()
-	SIGNAL_HANDLER
-	return COMPONENT_BLOCK_ABILITY_START
-
-/obj/structure/bath/proc/block_bath_trap_spell()
-	SIGNAL_HANDLER
-	return SPELL_CANCEL_CAST | SPELL_NO_FEEDBACK
-
-// Сопротивление, завершение и освобождение
-
-/obj/structure/bath/Exited(atom/movable/gone, direction)
-	. = ..()
-	if(gone == bath_trap_occupant)
-		clear_bath_trap()
-
-/obj/structure/bath/container_resist(mob/living/user)
-	if(user == bath_trap_occupant)
-		try_release_bath_trap(user)
-		return
-	return ..()
-
-/obj/structure/bath/proc/try_release_bath_trap(mob/living/escaper)
-	var/mob/living/victim = bath_trap_occupant
-	var/break_factor = 1
-	while(victim == bath_trap_occupant && !QDELETED(escaper) && !QDELETED(victim) && victim.loc == src)
-		var/escape_chance = clamp(escaper.STASTR * 2 * break_factor, 1, 99)
-		escaper.changeNext_move(CLICK_CD_FAST, override = TRUE)
-		if(!do_after(escaper, 1.5 SECONDS, src))
-			return
-		if(victim == bath_trap_occupant && victim.loc == src && prob(escape_chance))
-			clear_bath_trap()
-			return
-		break_factor *= 1.5
-
-/obj/structure/bath/proc/check_bath_trap()
-	var/mob/living/victim = bath_trap_occupant
-	if(QDELETED(victim) || victim.loc != src)
-		clear_bath_trap()
-		return
-	if(victim.stat == DEAD || !victim.client)
-		clear_bath_trap()
-		return
-	if(QDELETED(bath_trap_scene) || !length(bath_trap_scene.get_active_actions()))
-		if(!QDELETED(bath_trap_core) && bath_trap_core.loc == src)
-			qdel(bath_trap_core)
-		clear_bath_trap()
-		inject_bath_trap_reagents(victim)
-
-/obj/structure/bath/proc/inject_bath_trap_reagents(mob/living/victim)
-	var/datum/reagents/bath_reagents = reagents
-	for(var/datum/reagent/reagent as anything in bath_reagents?.reagent_list?.Copy())
-		if(QDELETED(victim) || QDELETED(bath_reagents) || !victim.reagents || victim.reagents.holder_full())
-			break
-		if(QDELETED(reagent) || reagent.volume <= 0 || ispath(reagent.type, /datum/reagent/water))
-			continue
-		var/dose = min(30, victim.reagents.maximum_volume - victim.reagents.total_volume)
-		var/reagent_type = reagent.type
-		var/list/reagent_data = bath_reagents.copy_data(reagent)
-		bath_reagents.react_single(reagent, victim, INJECT, dose / reagent.volume, show_message = FALSE)
-		if(!QDELETED(victim))
-			victim.reagents?.add_reagent(reagent_type, dose, reagent_data)
-
-/obj/structure/bath/proc/clear_bath_trap()
-	var/mob/living/victim = bath_trap_occupant
-	var/turf/entry = bath_trap_entry
-	bath_trap_occupant = null
-	bath_trap_entry = null
-	bath_trap_core = null
-	if(victim)
-		UnregisterSignal(victim, list(COMSIG_MOB_ABILITY_STARTED, COMSIG_MOB_BEFORE_SPELL_CAST, COMSIG_MOB_SPELL_ACTIVATED))
-		if(!QDELETED(victim))
-			victim.remove_traits(list(TRAIT_IMMOBILIZED, TRAIT_HANDS_BLOCKED, TRAIT_MUTE, TRAIT_SPELLBLOCK), REF(src))
-			victim.cure_blind(REF(src))
-	if(bath_trap_timer)
-		deltimer(bath_trap_timer)
-		bath_trap_timer = null
-	bath_trap_scene = null
-	QDEL_NULL(bath_trap_proxy)
-	if(!QDELETED(victim) && victim.loc == src)
-		var/turf/destination = get_turf(src)
-		if(entry && !entry.is_blocked_turf(source_atom = victim))
-			destination = entry
-		victim.forceMove(destination)
-		if(!QDELETED(src) && victim.m_intent != MOVE_INTENT_SNEAK && reagents?.total_volume >= water_overlay_min_volume)
-			playsound(src, pick('sound/foley/watermove (1).ogg', 'sound/foley/watermove (2).ogg'), 40, FALSE)
-	if(!has_buckled_mobs())
-		stop_reagent_touch_timer()
-	if(!QDELETED(src))
-		update_appearance(UPDATE_OVERLAYS)
-
-/obj/structure/bath/proc/release_bath_trap_items(turf/drop_turf, keep_cores = FALSE)
-	if(!drop_turf)
-		return FALSE
-	. = FALSE
-	for(var/obj/item/item in contents.Copy())
-		if(QDELETED(item) || item.loc != src)
-			continue
-		if(keep_cores && istype(item, /obj/item/reagent_containers/food/snacks/slime_core_egg))
-			continue
-		item.forceMove(drop_turf)
-		. = TRUE
-
-// Эффекты ядер при захвате
-
-/obj/item/reagent_containers/food/snacks/slime_core_egg/proc/on_bath_trap_capture(obj/structure/bath/bath, mob/living/victim, turf/entry)
-	if(type == /obj/item/reagent_containers/food/snacks/slime_core_egg)
-		bath.begin_bath_trap(victim, entry, src)
-
-/obj/item/reagent_containers/food/snacks/slime_core_egg/black/on_bath_trap_capture(obj/structure/bath/bath, mob/living/victim, turf/entry)
-	return
-
-/obj/item/reagent_containers/food/snacks/slime_core_egg/green/on_bath_trap_capture(obj/structure/bath/bath, mob/living/victim, turf/entry)
-	return
-
-/obj/item/reagent_containers/food/snacks/slime_core_egg/gray/on_bath_trap_capture(obj/structure/bath/bath, mob/living/victim, turf/entry)
-	return
-
-/obj/item/reagent_containers/food/snacks/slime_core_egg/red/on_bath_trap_capture(obj/structure/bath/bath, mob/living/victim, turf/entry)
-	return
-
-/obj/item/reagent_containers/food/snacks/slime_core_egg/blue/on_bath_trap_capture(obj/structure/bath/bath, mob/living/victim, turf/entry)
-	return
-
-// Прокси ловушки
-
-/mob/living/simple_animal/hostile/retaliate/slime_tendrils
-	name = "slime tendrils"
-	desc = "Gelatinous tendrils that rise from the bath."
-	icon = 'modular_rmh/icons/mob/monster/tentacles_grey.dmi'
-	icon_state = "vine_medium"
-	icon_living = "vine_medium"
-	icon_dead = "vine_medium"
-	faction = list("slime")
-	gender = PLURAL
-	ai_controller = null
-	move_resist = INFINITY
-	density = FALSE
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	invisibility = INVISIBILITY_ABSTRACT
-	health = 100
-	maxHealth = 100
-
-/mob/living/simple_animal/hostile/retaliate/slime_tendrils/Initialize(mapload)
-	. = ..()
-	apply_tentacle_palette(TENTACLE_PALETTE_VINE)
-	var/obj/item/organ/genitals/penis/ovipositor/ovipositor = ensure_tentacle_ovipositor(src)
-	if(ovipositor)
-		ovipositor.name = "gelatinous tendril"
-		ovipositor.desc = "A flexible strand of slime."
-
-// Действия прокси
-
-/proc/can_perform_bath_trap_action(mob/living/user, mob/living/target)
-	return istype(user, /mob/living/simple_animal/hostile/retaliate/slime_tendrils) && user != target
-
-/datum/sex_action/npc/npc_vaginal_sex/tentacle/maneater/bath/shows_on_menu(mob/living/user, mob/living/target)
-	return can_perform_bath_trap_action(user, target)
-
-/datum/sex_action/npc/npc_anal_sex/tentacle/maneater/bath/shows_on_menu(mob/living/user, mob/living/target)
-	return can_perform_bath_trap_action(user, target)
-
-/datum/sex_action/npc/npc_throat_sex/tentacle/maneater/bath/shows_on_menu(mob/living/user, mob/living/target)
-	return can_perform_bath_trap_action(user, target)
-
-/datum/sex_action/tentacle_jerk/maneater/bath/shows_on_menu(mob/living/user, mob/living/target)
-	return can_perform_bath_trap_action(user, target) && !!target.getorganslot(ORGAN_SLOT_PENIS)
-
-/datum/sex_action/maneater_vine_caress/bath/shows_on_menu(mob/living/user, mob/living/target)
-	return can_perform_bath_trap_action(user, target)
-///

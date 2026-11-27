@@ -223,7 +223,9 @@
 // RIVERMIST ADDITION START - bath update
 /obj/item/soap/proc/find_bathing_spot(mob/living/carbon/human/target, mob/living/user)
 	var/turf/T = get_turf(target)
-	var/obj/structure/bath/bath = target.buckled
+	var/obj/structure/bath/bath
+	if(target.loc == T)
+		bath = locate(/obj/structure/bath) in T
 	if(istype(bath))
 		if(bath.reagents && bath.get_bath_water_volume() >= bath.water_overlay_min_volume)
 			return T
