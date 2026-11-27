@@ -8,8 +8,8 @@
 	anchored = FALSE
 	move_resist = MOVE_FORCE_NORMAL
 	drag_slowdown = 6
-	var/max_reagent_volume = 900
-	var/water_overlay_min_volume = 600 // Минимальный объем который нужен для мытья в ванной. Обычно 2/3 от её объема
+	var/max_reagent_volume = 900 // Ёмкость ванны. Initialize()
+	var/water_overlay_min_volume = 600 // Обычно 1/3 ванны. При таком объеме начинают работать механики ванной связанные с водой
 	var/north_south_occupant_y_offset = 2
 	var/west_occupant_x_offset = 6
 	var/east_occupant_x_offset = -6
@@ -19,12 +19,12 @@
 	var/north_filled_mask_y_offset = -2
 	var/south_filled_mask_y_offset = -2
 	var/east_west_filled_mask_y_offset = -4
-	var/reagent_touch_amount = 5
-	var/reagent_touch_interval = 30 SECONDS
-	var/reagent_touch_timer
-	var/turf/occupant_turf
-	var/entry_delay = 1 SECONDS
-	var/list/entry_attempts
+	var/reagent_touch_amount = 5 // Максимальная контактная доза. apply_reagent_touch()
+	var/reagent_touch_interval = 10 SECONDS // Интервал контакта. add_occupant_appearance()
+	var/reagent_touch_timer // ID таймера контакта. add_occupant_appearance(), stop_reagent_touch_timer()
+	var/turf/occupant_turf // Отслеживаемый тайл ванны. update_occupant_turf(), on_occupant_moved(), apply_reagent_touch_to_occupants(), is_bath_reagent_occupant(), update_directional_appearance(), on_reagent_change()
+	var/entry_delay = 1 SECONDS // Задержка захода в ванну. Cross(), try_enter_bath()
+	var/list/entry_attempts // Попытки входа по персонажам. Cross(), try_enter_bath()
 
 
 
@@ -174,7 +174,7 @@
 			return FALSE
 	return ..()
 
-/obj/structure/bath/proc/break_overlapping_baths()
+/obj/structure/bath/proc/break_overlapping_baths() // Предохраняемся от рантаймов
 	if(!isturf(loc) || QDELETED(src))
 		return FALSE
 	var/turf/bath_turf = loc
