@@ -1,5 +1,10 @@
 #define BATH_IMMERSION_MASK "bath_immersion_mask"
 
+// Results of /obj/structure/bath/proc/get_bathing_state().
+#define BATH_TOO_LITTLE_LIQUID 1
+#define BATH_FILTHY 2
+#define BATH_CLEAN 3
+
 /obj/structure/bath
 	name = "bath"
 	icon = 'modular_rmh/icons/obj/structures/baths.dmi'
@@ -8,8 +13,15 @@
 	anchored = FALSE
 	move_resist = MOVE_FORCE_NORMAL
 	drag_slowdown = 6
-	var/max_reagent_volume = 900 // Ёмкость ванны. Initialize()
-	var/water_overlay_min_volume = 600 // Обычно 1/3 ванны. При таком объеме начинают работать механики ванной связанные с водой
+	var/max_reagent_volume = 900
+	/// Liquid needed to bathe. Below it the liquid overlay and the immersion mask scale down.
+	var/water_overlay_min_volume = 600
+	/// Hygiene multiplier for washing in clean water, same as bathhouse pools.
+	var/clean_hygiene_factor = 5
+	/// Hygiene multiplier for washing in filthy liquid, same as sewers.
+	var/filthy_hygiene_factor = -5
+	/// Liquid used up by washing one piece of clothing.
+	var/clothes_wash_volume = 5
 	var/north_south_occupant_y_offset = 2
 	var/west_occupant_x_offset = 6
 	var/east_occupant_x_offset = -6
@@ -19,17 +31,20 @@
 	var/north_filled_mask_y_offset = -2
 	var/south_filled_mask_y_offset = -2
 	var/east_west_filled_mask_y_offset = -4
-	var/reagent_touch_amount = 5 // Максимальная контактная доза. apply_reagent_touch()
-	var/reagent_touch_interval = 10 SECONDS // Интервал контакта. add_occupant_appearance()
-	var/reagent_touch_timer // ID таймера контакта. add_occupant_appearance(), stop_reagent_touch_timer()
-	var/turf/occupant_turf // Отслеживаемый тайл ванны. update_occupant_turf(), on_occupant_moved(), apply_reagent_touch_to_occupants(), is_bath_reagent_occupant(), update_directional_appearance(), on_reagent_change()
-	var/entry_delay = 1 SECONDS // Задержка захода в ванну. Cross(), try_enter_bath()
-	var/list/entry_attempts // Попытки входа по персонажам. Cross(), try_enter_bath()
+	/// Most of each liquid that touches an occupant per contact.
+	var/reagent_touch_amount = 5
+	var/reagent_touch_interval = 10 SECONDS
+	var/reagent_touch_timer
+	/// Turf whose living contents count as occupants.
+	var/turf/occupant_turf
+	/// How long a mob has to keep walking into the bath before it climbs in.
+	var/entry_delay = 1 SECONDS
+	/// Mobs waiting out entry_delay: TRUE while they wait, then the destination turf while they move in.
+	var/list/entry_attempts
+	/// How long it takes to drag a pulled mob into the bath.
+	var/drag_in_delay = 2 SECONDS
 
-
-
-
-// Жизненный цикл
+// Lifecycle
 
 /obj/structure/bath/Initialize()
 	. = ..()
@@ -39,17 +54,17 @@
 
 /obj/structure/bath/LateInitialize()
 	. = ..()
-	break_overlapping_baths()
+	// Stacked baths block every attempt to enter either of them, so only one may stay.
+	if(isturf(loc) && get_other_bath(loc))
+		log_mapping("Removed a stacked [type] at [AREACOORD(src)].")
+		qdel(src)
 
 /obj/structure/bath/Destroy()
 	update_occupant_turf(null)
 	stop_reagent_touch_timer()
 	return ..()
 
-
-
-
-// Взаимодействие и мытьё
+// Washing
 
 /obj/structure/bath/attack_hand(mob/living/user, list/modifiers)
 	if(!is_bath_reagent_occupant(user))
@@ -69,8 +84,7 @@
 		return ..()
 
 	var/obj/item/clothing/clothing = tool
-	if(!get_wash_water_type())
-		to_chat(user, span_warning("No water to wash these stains."))
+	if(!can_wash_clothes(user, clothing))
 		return ITEM_INTERACT_BLOCKING
 
 	var/list/wash_sounds = list('sound/foley/waterwash (1).ogg', 'sound/foley/waterwash (2).ogg')
@@ -78,46 +92,50 @@
 	playsound(user, pick_n_take(wash_sounds), 100, FALSE)
 	if(!do_after(user, 3 SECONDS, src) || QDELETED(src) || QDELETED(clothing) || clothing.loc != user)
 		return ITEM_INTERACT_BLOCKING
-
-	var/water_type = get_wash_water_type()
-	if(!water_type)
-		to_chat(user, span_warning("No water to wash these stains."))
+	if(!can_wash_clothes(user, clothing))
 		return ITEM_INTERACT_BLOCKING
 
-	var/dirty_water = !!reagents.has_reagent(/datum/reagent/water/gross)
-	reagents.remove_reagent(water_type, 5)
+	reagents.remove_any(clothes_wash_volume)
 	if(clothing.wetable)
-		clothing.wet.add_water(20, dirty = dirty_water, washed_properly = TRUE)
+		clothing.wet.add_water(20, dirty = FALSE, washed_properly = TRUE)
 	clothing.wash(CLEAN_WASH)
 	user.nobles_seen_servant_work()
 	playsound(user, pick(wash_sounds), 100, FALSE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/bath/proc/get_wash_water_type()
-	if(reagents?.has_reagent(/datum/reagent/water, 5))
-		return /datum/reagent/water
-	if(reagents?.has_reagent(/datum/reagent/water/gross, 5))
-		return /datum/reagent/water/gross
-	return null
-
-/obj/structure/bath/proc/get_bath_water_volume()
-	if(!reagents)
-		return 0
-	return reagents.get_reagent_amount(/datum/reagent/water) + reagents.get_reagent_amount(/datum/reagent/water/gross)
-
-/obj/structure/bath/proc/has_water_for_washing(mob/living/user)
-	if(get_bath_water_volume() < water_overlay_min_volume)
-		to_chat(user, span_warning("Bath is almost empty, you need to fill it up first for at least [water_overlay_min_volume]"))
+/obj/structure/bath/proc/can_wash_clothes(mob/living/user, obj/item/clothing/clothing)
+	if(reagents.total_volume < clothes_wash_volume)
+		to_chat(user, span_warning("There isn't enough water in [src] to wash [clothing]."))
 		return FALSE
-
-	if(!get_wash_water_type())
-		to_chat(user, span_warning("No water to wash these stains."))
+	if(is_filthy())
+		to_chat(user, span_warning("The water in [src] is too dirty to wash anything in."))
 		return FALSE
 	return TRUE
 
+/// Clean water and soap count as clean. Dirty water and every other liquid count as filth.
+/obj/structure/bath/proc/is_filthy()
+	var/static/list/clean_liquids = typecacheof(list(/datum/reagent/water, /datum/reagent/soap))
+	var/clean_volume = 0
+	for(var/datum/reagent/reagent as anything in reagents.reagent_list)
+		if(clean_liquids[reagent.type] && !istype(reagent, /datum/reagent/water/gross))
+			clean_volume += reagent.volume
+	return clean_volume * 2 < reagents.total_volume
+
+/obj/structure/bath/proc/get_bathing_state()
+	if(!reagents || reagents.total_volume < water_overlay_min_volume)
+		return BATH_TOO_LITTLE_LIQUID
+	if(is_filthy())
+		return BATH_FILTHY
+	return BATH_CLEAN
+
+/// Same hygiene rules as washing in open water: clean water cleans, filthy liquid dirties.
 /obj/structure/bath/proc/wash_occupant(mob/living/user)
-	if(!has_water_for_washing(user))
+	var/bathing_state = get_bathing_state()
+	if(bathing_state == BATH_TOO_LITTLE_LIQUID)
+		to_chat(user, span_warning("There isn't enough water in [src] to bathe in."))
 		return
+	if(bathing_state == BATH_FILTHY)
+		to_chat(user, span_warning("The water in [src] is filthy. Washing in it will only make me dirtier."))
 
 	var/list/wash_sounds = list('sound/foley/waterwash (1).ogg', 'sound/foley/waterwash (2).ogg')
 	user.visible_message(span_info("[user] starts to wash in [src]."))
@@ -126,20 +144,57 @@
 		return
 	if(!is_bath_reagent_occupant(user) && has_occupants())
 		return
-	if(!has_water_for_washing(user))
+	bathing_state = get_bathing_state()
+	if(bathing_state == BATH_TOO_LITTLE_LIQUID)
+		to_chat(user, span_warning("There isn't enough water in [src] to bathe in."))
 		return
 
-	user.wash(CLEAN_WASH)
 	playsound(user, pick(wash_sounds), 100, FALSE)
-	if(ishuman(user))
-		var/mob/living/carbon/human/bather = user
-		if(bather.wear_armor || bather.wear_shirt || bather.wear_pants)
-			to_chat(bather, span_notice("I can't wash properly with my clothes on."))
+	user.ExtinguishMob()
+	var/hygiene_factor = filthy_hygiene_factor
+	if(bathing_state == BATH_CLEAN)
+		user.wash(CLEAN_WASH)
+		hygiene_factor = clean_hygiene_factor
+	else
+		to_chat(user, span_warning("I only got dirtier."))
 
+	if(length(user.get_bathing_clothes()))
+		if(bathing_state == BATH_CLEAN)
+			to_chat(user, span_notice("I would get cleaner if I weren't wearing clothes."))
+		user.adjust_hygiene(HYGIENE_GAIN_CLOTHED * hygiene_factor)
+	else
+		user.adjust_hygiene(HYGIENE_GAIN_UNCLOTHED * hygiene_factor)
 
+/// Returns the turf the target can be scrubbed on, or null after telling the user why not.
+/obj/item/soap/proc/find_bathing_spot(mob/living/carbon/human/target, mob/living/user)
+	var/turf/T = get_turf(target)
+	var/obj/structure/bath/bath
+	if(target.loc == T)
+		bath = locate(/obj/structure/bath) in T
+	if(bath)
+		switch(bath.get_bathing_state())
+			if(BATH_TOO_LITTLE_LIQUID)
+				to_chat(user, span_warning("There isn't enough water in [bath] to bathe in."))
+				return null
+			if(BATH_FILTHY)
+				to_chat(user, span_warning("The water in [bath] is too filthy to bathe in."))
+				return null
+		return T
 
+	if(!istype(T, /turf/open/water))
+		if(istype(T, /turf/open/lava) && user == target)
+			to_chat(user, span_warning("Why am I doing this..."))
+		else
+			to_chat(user, span_warning("They must be in water!"))
+		return null
 
-// Занятость ванны
+	var/turf/open/water/bathspot = T
+	if(!bathspot.wash_in)
+		to_chat(user, span_warning("I can't bathe in this..."))
+		return null
+	return T
+
+// Occupancy
 
 /obj/structure/bath/Cross(atom/movable/mover)
 	if(istype(mover, /obj/structure/bath) && mover.loc != loc)
@@ -147,20 +202,56 @@
 	. = ..()
 	if(!. || entry_delay <= 0 || !isliving(mover) || !isturf(mover.loc) || !isturf(loc) || mover.loc == loc || mover.throwing || (mover.movement_type & PHASING))
 		return
-	if(LAZYACCESS(entry_attempts, mover) == loc)
+	// A pulled mob follows its puller in without waiting.
+	if(mover.moving_from_pull)
 		return
-	if(!LAZYACCESS(entry_attempts, mover))
-		LAZYSET(entry_attempts, mover, TRUE)
-		INVOKE_ASYNC(src, PROC_REF(try_enter_bath), mover, mover.loc, loc)
+	var/mob/living/entrant = mover
+	// Riders, mounts and anyone carrying someone stay out.
+	if(entrant.buckled || entrant.has_buckled_mobs())
+		return FALSE
+	if(LAZYACCESS(entry_attempts, entrant) == loc)
+		return
+	if(!LAZYACCESS(entry_attempts, entrant))
+		LAZYSET(entry_attempts, entrant, TRUE)
+		INVOKE_ASYNC(src, PROC_REF(try_enter_bath), entrant, entrant.loc, loc)
 	return FALSE
 
 /obj/structure/bath/proc/try_enter_bath(mob/living/entrant, turf/start, turf/destination)
-	var/show_progress = !(locate(/mob/living/carbon/human) in destination)
-	if(!QDELETED(entrant) && entrant.loc == start && loc == destination && do_after(entrant, entry_delay, src, timed_action_flags = IGNORE_SLOWDOWNS, progress = show_progress, hidden = !show_progress))
+	if(!QDELETED(entrant) && entrant.loc == start && loc == destination && do_after(entrant, entry_delay, src, timed_action_flags = IGNORE_SLOWDOWNS))
 		if(!QDELETED(src) && !QDELETED(entrant) && entrant.loc == start && loc == destination)
 			LAZYSET(entry_attempts, entrant, destination)
 			entrant.Move(destination, get_dir(start, destination))
 	LAZYREMOVE(entry_attempts, entrant)
+
+/obj/structure/bath/MouseDrop_T(atom/movable/dropping, mob/living/user)
+	if(!isliving(dropping) || dropping == user || !isliving(user))
+		return ..()
+	var/mob/living/target = dropping
+	if(user.pulling != target)
+		to_chat(user, span_warning("I need to hold on to [target] to drag [target.p_them()] in."))
+		return TRUE
+	drag_into_bath(target, user)
+	return TRUE
+
+/obj/structure/bath/proc/drag_into_bath(mob/living/target, mob/living/user)
+	if(!can_drag_into_bath(target, user))
+		return
+	user.visible_message(span_warning("[user] starts to drag [target] into [src]."), span_warning("I start to drag [target] into [src]."))
+	if(!do_after(user, drag_in_delay, target) || !can_drag_into_bath(target, user))
+		return
+	user.visible_message(span_notice("[user] drags [target] into [src]."), span_notice("I drag [target] into [src]."))
+	target.forceMove(loc)
+
+/obj/structure/bath/proc/can_drag_into_bath(mob/living/target, mob/living/user)
+	if(QDELETED(src) || QDELETED(target) || QDELETED(user) || user.pulling != target)
+		return FALSE
+	if(user.incapacitated() || user.body_position == LYING_DOWN)
+		return FALSE
+	if(!isturf(loc) || !isturf(target.loc) || target.loc == loc || !Adjacent(user) || !target.Adjacent(src))
+		return FALSE
+	if(target.buckled || target.has_buckled_mobs())
+		return FALSE
+	return TRUE
 
 /obj/structure/bath/proc/has_occupants()
 	return isturf(loc) && (locate(/mob/living) in loc)
@@ -174,21 +265,10 @@
 			return FALSE
 	return ..()
 
-/obj/structure/bath/proc/break_overlapping_baths() // Предохраняемся от рантаймов
-	if(!isturf(loc) || QDELETED(src))
-		return FALSE
-	var/turf/bath_turf = loc
-	var/list/overlapping_baths = list()
+/obj/structure/bath/proc/get_other_bath(turf/bath_turf)
 	for(var/obj/structure/bath/bath in bath_turf)
-		if(!QDELETED(bath))
-			overlapping_baths += bath
-	if(length(overlapping_baths) < 2)
-		return FALSE
-
-	for(var/obj/structure/bath/bath as anything in overlapping_baths)
-		if(!QDELETED(bath) && bath.loc == bath_turf)
-			bath.atom_destruction()
-	return TRUE
+		if(bath != src && !QDELETED(bath))
+			return bath
 
 /obj/structure/bath/proc/update_occupant_turf(turf/new_turf)
 	if(occupant_turf == new_turf)
@@ -210,8 +290,12 @@
 		return
 	var/mob/living/occupant = arrived
 	add_occupant_appearance(occupant)
-	if(ishuman(occupant) && reagents?.total_volume < water_overlay_min_volume)
-		to_chat(occupant, span_warning("Bath is half empty, it would be good to fill it with water at least for [water_overlay_min_volume]"))
+	if(ishuman(occupant))
+		switch(get_bathing_state())
+			if(BATH_TOO_LITTLE_LIQUID)
+				to_chat(occupant, span_warning("There isn't enough water in [src] to bathe in."))
+			if(BATH_FILTHY)
+				to_chat(occupant, span_warning("The water in [src] is filthy."))
 	if(occupant.m_intent != MOVE_INTENT_SNEAK && reagents?.total_volume >= water_overlay_min_volume)
 		playsound(src, 'sound/foley/waterenter.ogg', 40, FALSE)
 
@@ -225,6 +309,8 @@
 	if(!has_occupants())
 		stop_reagent_touch_timer()
 
+// Offset and filter keys include REF(src): a mob stepping straight into a neighbouring bath
+// gets the new bath's appearance before the old bath removes its own.
 /obj/structure/bath/proc/add_occupant_appearance(mob/living/occupant)
 	RegisterSignal(occupant, COMSIG_MOVABLE_MOVED, PROC_REF(on_occupant_moved), override = TRUE)
 	update_occupant_offset(occupant)
@@ -239,8 +325,7 @@
 	occupant.reset_offsets(REF(src))
 	occupant.remove_filter("[BATH_IMMERSION_MASK]-[REF(src)]")
 
-
-// Применение реагентов
+// Reagent contact
 
 /obj/structure/bath/proc/stop_reagent_touch_timer()
 	if(reagent_touch_timer)
@@ -260,6 +345,7 @@
 		return FALSE
 	return occupant_turf && occupant.loc == occupant_turf
 
+/// Water of every kind touches occupants without being used up; other liquids are spent on contact.
 /obj/structure/bath/proc/apply_reagent_touch(mob/living/occupant)
 	if(!is_bath_reagent_occupant(occupant))
 		return FALSE
@@ -279,14 +365,16 @@
 			bath_reagents.remove_reagent(reagent_type, contact_amount, safety = TRUE)
 	return TRUE
 
-
-
-
-// Внешний вид, направление и маска погружения
+// Appearance
 
 /obj/structure/bath/Moved(atom/OldLoc, Dir, Forced = FALSE)
 	. = ..()
-	if((flags_1 & INITIALIZED_1) && break_overlapping_baths())
+	if((flags_1 & INITIALIZED_1) && isturf(loc) && get_other_bath(loc))
+		// Only forced moves get here: Cross() stops baths from walking onto each other.
+		if(isturf(OldLoc) && !get_other_bath(OldLoc))
+			forceMove(OldLoc)
+		else
+			qdel(src)
 		return
 	update_occupant_turf(isturf(loc) ? loc : null)
 	update_directional_appearance()
@@ -381,11 +469,8 @@
 		0, 0, 0, 0,
 	)
 
-#undef BATH_IMMERSION_MASK
+// Bath types
 
-
-
-// Типы ванн
 /obj/structure/bath/wooden
 	name = "wooden bath"
 
@@ -405,14 +490,25 @@
 	east_west_empty_mask_y_offset = -2
 	east_west_filled_mask_y_offset = -2
 
+// Recipes
 
+/// Blueprints only check turf density, so baths stop a second bath being built on their tile.
+/proc/bath_blocks_construction(mob/user, turf/T)
+	if(!(locate(/obj/structure/bath) in T))
+		return FALSE
+	to_chat(user, span_warning("There's already a bath here."))
+	return TRUE
 
-// Рецепты
 /datum/blueprint_recipe/carpentry/barrel/bath
 	name = "barrel bath"
 	desc = "A wooden barrel made for bathing."
 	result_type = /obj/structure/bath/barrel
 	supports_directions = TRUE
+
+/datum/blueprint_recipe/carpentry/barrel/bath/check_craft_requirements(mob/user, turf/T, obj/structure/blueprint/blueprint)
+	if(bath_blocks_construction(user, T))
+		return FALSE
+	return ..()
 
 /datum/blueprint_recipe/carpentry/wooden_bath
 	name = "wooden bath"
@@ -423,8 +519,10 @@
 	craftdiff = SKILL_RANK_NOVICE
 
 /datum/blueprint_recipe/carpentry/wooden_bath/check_craft_requirements(mob/user, turf/T, obj/structure/blueprint/blueprint)
+	if(bath_blocks_construction(user, T))
+		return FALSE
 	if(GET_MOB_SKILL_VALUE(user, skillcraft) < SKILL_LEVEL_NOVICE)
-		to_chat(user, span_warning("I need basic carpentry skill to build this."))
+		to_chat(user, span_warning("I need to be at least a novice carpenter to build this."))
 		return FALSE
 	return ..()
 
@@ -437,8 +535,10 @@
 	craftdiff = SKILL_RANK_APPRENTICE
 
 /datum/blueprint_recipe/engineering/steel_bath/check_craft_requirements(mob/user, turf/T, obj/structure/blueprint/blueprint)
-	if(GET_MOB_SKILL_VALUE(user, skillcraft) < SKILL_LEVEL_JOURNEYMAN)
-		to_chat(user, span_warning("I need novice engineering skill to build this."))
+	if(bath_blocks_construction(user, T))
+		return FALSE
+	if(GET_MOB_SKILL_VALUE(user, skillcraft) < SKILL_LEVEL_APPRENTICE)
+		to_chat(user, span_warning("I need to be at least an apprentice engineer to build this."))
 		return FALSE
 	return ..()
 
@@ -451,7 +551,14 @@
 	craftdiff = SKILL_RANK_MASTER
 
 /datum/blueprint_recipe/masonry/marble_bath/check_craft_requirements(mob/user, turf/T, obj/structure/blueprint/blueprint)
+	if(bath_blocks_construction(user, T))
+		return FALSE
 	if(GET_MOB_SKILL_VALUE(user, skillcraft) < SKILL_LEVEL_MASTER)
-		to_chat(user, span_warning("I need master masonry skill to build this."))
+		to_chat(user, span_warning("I need to be a master mason to build this."))
 		return FALSE
 	return ..()
+
+#undef BATH_IMMERSION_MASK
+#undef BATH_TOO_LITTLE_LIQUID
+#undef BATH_FILTHY
+#undef BATH_CLEAN
