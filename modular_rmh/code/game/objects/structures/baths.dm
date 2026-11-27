@@ -35,6 +35,11 @@
 	. = ..()
 	create_reagents(max_reagent_volume, AMOUNT_VISIBLE | REFILLABLE | DRAINABLE)
 	update_occupant_turf(isturf(loc) ? loc : null)
+	return INITIALIZE_HINT_LATELOAD
+
+/obj/structure/bath/LateInitialize()
+	. = ..()
+	break_overlapping_baths()
 
 /obj/structure/bath/Destroy()
 	update_occupant_turf(null)
@@ -100,13 +105,18 @@
 		return 0
 	return reagents.get_reagent_amount(/datum/reagent/water) + reagents.get_reagent_amount(/datum/reagent/water/gross)
 
-/obj/structure/bath/proc/wash_occupant(mob/living/user)
+/obj/structure/bath/proc/has_water_for_washing(mob/living/user)
 	if(get_bath_water_volume() < water_overlay_min_volume)
 		to_chat(user, span_warning("Bath is almost empty, you need to fill it up first for at least [water_overlay_min_volume]"))
-		return
+		return FALSE
 
 	if(!get_wash_water_type())
 		to_chat(user, span_warning("No water to wash these stains."))
+		return FALSE
+	return TRUE
+
+/obj/structure/bath/proc/wash_occupant(mob/living/user)
+	if(!has_water_for_washing(user))
 		return
 
 	var/list/wash_sounds = list('sound/foley/waterwash (1).ogg', 'sound/foley/waterwash (2).ogg')
@@ -115,6 +125,8 @@
 	if(!do_after(user, 3 SECONDS, src) || QDELETED(src) || QDELETED(user))
 		return
 	if(!is_bath_reagent_occupant(user) && has_occupants())
+		return
+	if(!has_water_for_washing(user))
 		return
 
 	user.wash(CLEAN_WASH)
@@ -130,6 +142,8 @@
 // Занятость ванны
 
 /obj/structure/bath/Cross(atom/movable/mover)
+	if(istype(mover, /obj/structure/bath) && mover.loc != loc)
+		return FALSE
 	. = ..()
 	if(!. || entry_delay <= 0 || !isliving(mover) || !isturf(mover.loc) || !isturf(loc) || mover.loc == loc || mover.throwing || (mover.movement_type & PHASING))
 		return
@@ -159,6 +173,22 @@
 		if(has_occupants() || (isturf(newloc) && (locate(/mob/living/carbon/human) in newloc)))
 			return FALSE
 	return ..()
+
+/obj/structure/bath/proc/break_overlapping_baths()
+	if(!isturf(loc) || QDELETED(src))
+		return FALSE
+	var/turf/bath_turf = loc
+	var/list/overlapping_baths = list()
+	for(var/obj/structure/bath/bath in bath_turf)
+		if(!QDELETED(bath))
+			overlapping_baths += bath
+	if(length(overlapping_baths) < 2)
+		return FALSE
+
+	for(var/obj/structure/bath/bath as anything in overlapping_baths)
+		if(!QDELETED(bath) && bath.loc == bath_turf)
+			bath.atom_destruction()
+	return TRUE
 
 /obj/structure/bath/proc/update_occupant_turf(turf/new_turf)
 	if(occupant_turf == new_turf)
@@ -256,6 +286,8 @@
 
 /obj/structure/bath/Moved(atom/OldLoc, Dir, Forced = FALSE)
 	. = ..()
+	if((flags_1 & INITIALIZED_1) && break_overlapping_baths())
+		return
 	update_occupant_turf(isturf(loc) ? loc : null)
 	update_directional_appearance()
 
